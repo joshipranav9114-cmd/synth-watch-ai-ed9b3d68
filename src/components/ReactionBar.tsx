@@ -22,9 +22,9 @@ export function ReactionBar({
   const [userReaction, setUserReaction] = useState<string | null>(initialUserReaction);
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  const handleReact = (emoji: string) => {
+  const handleReact = async (emoji: string) => {
     if (!userId) return;
-    const result = toggleReaction(targetType, targetId, userId, emoji);
+    const result = await toggleReaction(targetType, targetId, userId, emoji);
     setReactions(result.reactions);
     setUserReaction(result.user_reaction);
     setPickerOpen(false);
