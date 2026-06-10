@@ -14,6 +14,74 @@ export type Database = {
   }
   public: {
     Tables: {
+      anime_comments: {
+        Row: {
+          anime_id: string
+          body: string
+          created_at: string
+          id: string
+          parent_id: string | null
+          user_id: string
+        }
+        Insert: {
+          anime_id: string
+          body: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          user_id: string
+        }
+        Update: {
+          anime_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anime_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "anime_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anime_reviews: {
+        Row: {
+          anime_id: string
+          anime_title: string
+          body: string
+          created_at: string
+          id: string
+          rating: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          anime_id: string
+          anime_title: string
+          body: string
+          created_at?: string
+          id?: string
+          rating: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          anime_id?: string
+          anime_title?: string
+          body?: string
+          created_at?: string
+          id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
@@ -73,8 +141,67 @@ export type Database = {
         }
         Relationships: []
       }
+      community_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          target_id: string
+          target_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          target_id: string
+          target_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          target_id?: string
+          target_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      discussion_messages: {
+        Row: {
+          anime_id: string
+          anime_image: string | null
+          anime_title: string
+          body: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          anime_id: string
+          anime_image?: string | null
+          anime_title: string
+          body: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          anime_id?: string
+          anime_image?: string | null
+          anime_title?: string
+          body?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          avatar_color: string
+          avatar_emoji: string
           avatar_url: string | null
           created_at: string
           display_name: string | null
@@ -83,6 +210,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avatar_color?: string
+          avatar_emoji?: string
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
@@ -91,6 +220,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avatar_color?: string
+          avatar_emoji?: string
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
