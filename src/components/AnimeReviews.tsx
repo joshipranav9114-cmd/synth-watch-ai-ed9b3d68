@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Star, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -132,36 +132,39 @@ function ReviewCard({
 }
 
 export function AnimeReviews({ animeId, animeTitle, user }: AnimeReviewsProps) {
-  const [reviews, setReviews] = useState<Review[]>(() => getReviews(animeId));
-  const [stats, setStats] = useState(() => getAnimeRatingStats(animeId));
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [stats, setStats] = useState<{ average: number; total: number; distribution: number[] }>({ average: 0, total: 0, distribution: Array(10).fill(0) });
   const [rating, setRating] = useState(0);
   const [body, setBody] = useState("");
   const [editing, setEditing] = useState<Review | null>(null);
   const [composing, setComposing] = useState(false);
 
-  const refresh = useCallback(() => {
-    setReviews(getReviews(animeId));
-    setStats(getAnimeRatingStats(animeId));
+  const refresh = useCallback(async () => {
+    const [r, s] = await Promise.all([getReviews(animeId), getAnimeRatingStats(animeId)]);
+    setReviews(r);
+    setStats(s);
   }, [animeId]);
 
-  const handleSubmit = () => {
+  useEffect(() => { void refresh(); }, [refresh]);
+
+  const handleSubmit = async () => {
     if (!user) { toast.error("Sign in to leave a review"); return; }
     if (!rating) { toast.error("Please select a rating"); return; }
     if (!body.trim()) { toast.error("Please write something"); return; }
-    const profile = getProfile(user.id);
-    addReview(animeId, animeTitle, user.id, profile, rating, body.trim());
+    const profile = await getProfile(user.id);
+    await addReview(animeId, animeTitle, user.id, profile, rating, body.trim());
     setRating(0);
     setBody("");
     setEditing(null);
     setComposing(false);
-    refresh();
+    await refresh();
     toast.success("Review posted!");
   };
 
-  const handleDelete = (reviewId: string) => {
+  const handleDelete = async (reviewId: string) => {
     if (!user) return;
-    deleteReview(animeId, reviewId, user.id);
-    refresh();
+    await deleteReview(animeId, reviewId, user.id);
+    await refresh();
     toast("Review deleted");
   };
 
