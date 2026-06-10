@@ -20,7 +20,13 @@ function Detail() {
   const { data: anime, isLoading } = useAnimeById(id);
   const [saved, setSaved] = useState(false);
   const [activeSection, setActiveSection] = useState<"info" | "reviews" | "discuss">("info");
-  const communityStats = getAnimeRatingStats(id);
+  const [communityStats, setCommunityStats] = useState<{ average: number; total: number; distribution: number[] }>({ average: 0, total: 0, distribution: Array(10).fill(0) });
+
+  useEffect(() => {
+    let alive = true;
+    getAnimeRatingStats(id).then((s) => { if (alive) setCommunityStats(s); });
+    return () => { alive = false; };
+  }, [id]);
 
   useEffect(() => {
     if (!user || !anime) return;
