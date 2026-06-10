@@ -9,6 +9,7 @@ import {
   type Comment,
   timeAgo,
 } from "@/lib/community";
+import type { UserProfile } from "@/lib/community";
 import { UserAvatar } from "@/components/UserAvatar";
 import { ReactionBar } from "@/components/ReactionBar";
 import type { User } from "@supabase/supabase-js";
@@ -98,7 +99,7 @@ function CommentItem({
 
 export function AnimeComments({ animeId, user }: AnimeCommentsProps) {
   const [comments, setComments] = useState<Comment[]>([]);
-  const [myProfile, setMyProfile] = useState<ReturnType<typeof Object> | null>(null);
+  const [myProfile, setMyProfile] = useState<UserProfile | null>(null);
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null);
 
