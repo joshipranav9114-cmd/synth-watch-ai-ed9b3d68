@@ -14,16 +14,28 @@ function Profile() {
   const nav = useNavigate();
   const emailName = user?.email?.split("@")[0] ?? "Pilot";
 
-  const [profile, setProfile] = useState<UserProfile>(() => {
-    if (!user) return { id: "guest", display_name: emailName, avatar_emoji: "⭐", avatar_color: "purple" };
-    const p = getProfile(user.id);
-    if (p.display_name === "Anon") {
-      const updated = { ...p, display_name: emailName };
-      saveProfile(updated);
-      return updated;
-    }
-    return p;
-  });
+  const [profile, setProfile] = useState<UserProfile>(() => ({
+    id: user?.id ?? "guest",
+    display_name: emailName,
+    avatar_emoji: "⭐",
+    avatar_color: "purple",
+  }));
+
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    getProfile(user.id).then((p) => {
+      if (!alive) return;
+      if (p.display_name === "Anon") {
+        const updated = { ...p, display_name: emailName };
+        void saveProfile(updated);
+        setProfile(updated);
+      } else {
+        setProfile(p);
+      }
+    });
+    return () => { alive = false; };
+  }, [user, emailName]);
 
   // Hydrate display name from the profiles table (source of truth)
   useEffect(() => {

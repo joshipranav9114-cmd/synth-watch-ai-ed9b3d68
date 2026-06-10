@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Trash2, MessageSquare, CornerDownRight } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -9,6 +9,7 @@ import {
   type Comment,
   timeAgo,
 } from "@/lib/community";
+import type { UserProfile } from "@/lib/community";
 import { UserAvatar } from "@/components/UserAvatar";
 import { ReactionBar } from "@/components/ReactionBar";
 import type { User } from "@supabase/supabase-js";
@@ -97,26 +98,37 @@ function CommentItem({
 }
 
 export function AnimeComments({ animeId, user }: AnimeCommentsProps) {
-  const [comments, setComments] = useState<Comment[]>(() => getComments(animeId));
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [myProfile, setMyProfile] = useState<UserProfile | null>(null);
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null);
 
-  const refresh = useCallback(() => setComments(getComments(animeId)), [animeId]);
+  const refresh = useCallback(async () => {
+    setComments(await getComments(animeId));
+  }, [animeId]);
 
-  const handleSubmit = () => {
+  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    if (!user) { setMyProfile(null); return; }
+    let alive = true;
+    getProfile(user.id).then((p) => { if (alive) setMyProfile(p); });
+    return () => { alive = false; };
+  }, [user]);
+
+  const handleSubmit = async () => {
     if (!user) { toast.error("Sign in to comment"); return; }
     if (!text.trim()) return;
-    const profile = getProfile(user.id);
-    addComment(animeId, user.id, profile, text.trim(), replyTo?.id ?? null);
+    const profile = await getProfile(user.id);
+    await addComment(animeId, user.id, profile, text.trim(), replyTo?.id ?? null);
     setText("");
     setReplyTo(null);
-    refresh();
+    await refresh();
   };
 
-  const handleDelete = (commentId: string) => {
+  const handleDelete = async (commentId: string) => {
     if (!user) return;
-    deleteComment(animeId, commentId, user.id);
-    refresh();
+    await deleteComment(animeId, commentId, user.id);
+    await refresh();
     toast("Comment deleted");
   };
 
@@ -146,7 +158,7 @@ export function AnimeComments({ animeId, user }: AnimeCommentsProps) {
             </div>
           )}
           <div className="flex gap-2.5 items-start">
-            <UserAvatar profile={getProfile(user.id)} size="sm" />
+            {myProfile && <UserAvatar profile={myProfile} size="sm" />}
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}

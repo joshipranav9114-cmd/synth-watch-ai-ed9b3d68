@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { MessageSquare, Users, Flame, Search } from "lucide-react";
-import { getRooms, getMessages, type RoomSummary, timeAgo } from "@/lib/community";
+import { getRooms, type RoomSummary, timeAgo } from "@/lib/community";
 import { useTopAnime } from "@/lib/anime-data";
 
 export const Route = createFileRoute("/_app/community")({ component: Community });
@@ -16,10 +16,8 @@ const SEED_ROOMS = [
 ];
 
 function RoomCard({ room }: { room: RoomSummary }) {
-  const msgs = getMessages(room.anime_id);
-  const activeCount = msgs.filter(
-    (m) => Date.now() - new Date(m.created_at).getTime() < 3600000,
-  ).length;
+  const isActive = Date.now() - new Date(room.last_active).getTime() < 3600000;
+  const activeCount = isActive ? room.message_count : 0;
 
   return (
     <Link
@@ -58,25 +56,26 @@ export default function Community() {
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    // Seed rooms from localStorage + add defaults if empty
-    const stored = getRooms();
-    const byId = new Map(stored.map((r) => [r.anime_id, r]));
-
-    SEED_ROOMS.forEach((seed) => {
-      if (!byId.has(seed.anime_id)) {
-        byId.set(seed.anime_id, {
-          ...seed,
-          message_count: 0,
-          last_active: new Date(Date.now() - Math.random() * 86400000 * 3).toISOString(),
-        });
-      }
+    let alive = true;
+    getRooms().then((stored) => {
+      if (!alive) return;
+      const byId = new Map<string, RoomSummary>(stored.map((r) => [r.anime_id, r]));
+      SEED_ROOMS.forEach((seed) => {
+        if (!byId.has(seed.anime_id)) {
+          byId.set(seed.anime_id, {
+            ...seed,
+            message_count: 0,
+            last_active: new Date(Date.now() - Math.random() * 86400000 * 3).toISOString(),
+          });
+        }
+      });
+      setRooms(
+        Array.from(byId.values()).sort(
+          (a, b) => new Date(b.last_active).getTime() - new Date(a.last_active).getTime(),
+        ),
+      );
     });
-
-    setRooms(
-      Array.from(byId.values()).sort(
-        (a, b) => new Date(b.last_active).getTime() - new Date(a.last_active).getTime(),
-      ),
-    );
+    return () => { alive = false; };
   }, []);
 
   const filtered = rooms.filter((r) =>

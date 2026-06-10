@@ -6,12 +6,12 @@ import {
   addMessage,
   getMessages,
   getProfile,
-  upsertRoom,
   type DiscussionMessage,
   REACTION_EMOJIS,
   toggleReaction,
   timeAgo,
 } from "@/lib/community";
+import type { UserProfile } from "@/lib/community";
 import { useAnimeById } from "@/lib/anime-data";
 import { useAuth } from "@/lib/auth";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -33,9 +33,9 @@ function MessageBubble({
   const [userReaction, setUserReaction] = useState(msg.user_reaction);
   const [showPicker, setShowPicker] = useState(false);
 
-  const react = (emoji: string) => {
+  const react = async (emoji: string) => {
     if (!userId) return;
-    const result = toggleReaction("message", msg.id, userId, emoji);
+    const result = await toggleReaction("message", msg.id, userId, emoji);
     setReactions(result.reactions);
     setUserReaction(result.user_reaction);
     setShowPicker(false);
@@ -123,27 +123,36 @@ function DiscussionRoom() {
   const nav = useNavigate();
   const { user } = useAuth();
   const { data: anime } = useAnimeById(animeId);
-  const [messages, setMessages] = useState<DiscussionMessage[]>(() =>
-    getMessages(animeId),
-  );
+  const [messages, setMessages] = useState<DiscussionMessage[]>([]);
+  const [myProfile, setMyProfile] = useState<UserProfile | null>(null);
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
+    let alive = true;
+    getMessages(animeId).then((m) => { if (alive) setMessages(m); });
+    return () => { alive = false; };
+  }, [animeId]);
+
+  useEffect(() => {
+    if (!user) { setMyProfile(null); return; }
+    let alive = true;
+    getProfile(user.id).then((p) => { if (alive) setMyProfile(p); });
+    return () => { alive = false; };
+  }, [user]);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!user) { toast.error("Sign in to chat"); return; }
     if (!text.trim()) return;
-    const profile = getProfile(user.id);
-    addMessage(animeId, user.id, profile, text.trim());
-    if (anime) {
-      upsertRoom(animeId, anime.title, anime.image);
-    }
+    const profile = await getProfile(user.id);
+    await addMessage(animeId, user.id, profile, text.trim(), anime?.title ?? "", anime?.image ?? null);
     setText("");
-    setMessages(getMessages(animeId));
+    setMessages(await getMessages(animeId));
     inputRef.current?.focus();
   };
 
@@ -209,7 +218,7 @@ function DiscussionRoom() {
       <div className="px-3 py-3 pb-safe border-t border-border/50 glass sticky bottom-0">
         {user ? (
           <div className="flex items-end gap-2">
-            <UserAvatar profile={getProfile(user.id)} size="sm" />
+            {myProfile && <UserAvatar profile={myProfile} size="sm" />}
             <div className="flex-1 rounded-2xl glass px-3 py-2 flex items-end gap-2">
               <textarea
                 ref={inputRef}
