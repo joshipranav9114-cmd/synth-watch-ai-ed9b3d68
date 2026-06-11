@@ -10,6 +10,8 @@ import { primaryPlatform } from "@/lib/streaming";
 import { AnimeReviews } from "@/components/AnimeReviews";
 import { AnimeComments } from "@/components/AnimeComments";
 import { getAnimeRatingStats } from "@/lib/community";
+import { getProgressFor, upsertProgress, type WatchProgress } from "@/lib/watch-progress";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_app/anime/$id")({ component: Detail });
 
@@ -21,6 +23,8 @@ function Detail() {
   const [saved, setSaved] = useState(false);
   const [activeSection, setActiveSection] = useState<"info" | "reviews" | "discuss">("info");
   const [communityStats, setCommunityStats] = useState<{ average: number; total: number; distribution: number[] }>({ average: 0, total: 0, distribution: Array(10).fill(0) });
+  const [progress, setProgress] = useState<WatchProgress | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     let alive = true;
@@ -32,6 +36,13 @@ function Detail() {
     if (!user || !anime) return;
     supabase.from("watchlist").select("id").eq("user_id", user.id).eq("anime_id", anime.id).maybeSingle()
       .then(({ data }) => setSaved(!!data));
+  }, [user, anime]);
+
+  useEffect(() => {
+    if (!user || !anime) return;
+    let alive = true;
+    getProgressFor(user.id, anime.id).then((p) => { if (alive) setProgress(p); });
+    return () => { alive = false; };
   }, [user, anime]);
 
   if (isLoading) return <main className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</main>;
@@ -55,6 +66,25 @@ function Detail() {
   };
 
   const primary = primaryPlatform(anime);
+
+  const handleWatch = async () => {
+    if (!user || !anime) return;
+    try {
+      await upsertProgress({
+        userId: user.id,
+        animeId: anime.id,
+        animeTitle: anime.title,
+        animeImage: anime.image,
+        episode: progress?.episode ?? 1,
+        progress: Math.max(progress?.progress ?? 0, 10),
+      });
+      queryClient.invalidateQueries({ queryKey: ["watch-progress", user.id] });
+      const fresh = await getProgressFor(user.id, anime.id);
+      setProgress(fresh);
+    } catch (e) {
+      // non-blocking
+    }
+  };
 
   return (
     <main>
@@ -89,8 +119,9 @@ function Detail() {
       <section className="px-5 pt-6">
         <div className="flex gap-2">
           <a href={primary.searchUrl(anime.title)} target="_blank" rel="noopener noreferrer"
+            onClick={handleWatch}
             className="flex h-13 flex-1 items-center justify-center gap-2 rounded-full bg-gradient-cr py-4 text-sm font-black uppercase tracking-widest text-background shadow-orange transition-transform active:scale-[0.98]">
-            <Play className="h-4 w-4 fill-current" /> Watch on {primary.name}
+            <Play className="h-4 w-4 fill-current" /> {progress ? `Resume EP ${progress.episode}` : `Watch on ${primary.name}`}
           </a>
           <button onClick={toggleSave} className="flex h-13 items-center justify-center rounded-full glass px-5 text-sm font-bold">
             {saved ? <BookmarkCheck className="h-4 w-4 text-neon-pink" /> : <Bookmark className="h-4 w-4 text-foreground" />}
