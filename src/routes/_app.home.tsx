@@ -8,6 +8,8 @@ import { useFeaturedAnime, useSeasonalAnime, useTopAnime, type Anime } from "@/l
 import { useAuth } from "@/lib/auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import logo from "@/assets/aniverse-logo.png";
+import { useQuery } from "@tanstack/react-query";
+import { getContinueWatching } from "@/lib/watch-progress";
 
 export const Route = createFileRoute("/_app/home")({ component: Home });
 
@@ -17,6 +19,12 @@ function Home() {
   const { data: featured } = useFeaturedAnime();
   const { data: trending } = useTopAnime();
   const { data: seasonal } = useSeasonalAnime();
+  const { data: continueWatching, isLoading: cwLoading } = useQuery({
+    queryKey: ["watch-progress", user?.id],
+    queryFn: () => getContinueWatching(user!.id),
+    enabled: !!user,
+  });
+  const resumeAnimeId = continueWatching?.[0]?.anime_id ?? featured?.[0]?.id ?? "21";
 
   return (
     <main className="bg-mesh">
@@ -48,7 +56,7 @@ function Home() {
           </div>
           <Link
             to="/anime/$id"
-            params={{ id: featured?.[0]?.id ?? "21" }}
+            params={{ id: resumeAnimeId }}
             className="btn-glow flex items-center gap-2 rounded-full bg-gradient-cr px-4 py-2 text-[11px] font-black uppercase tracking-widest text-background shadow-orange"
           >
             <Play className="h-3.5 w-3.5 fill-current" /> Resume
@@ -57,7 +65,7 @@ function Home() {
       </section>
 
       <Section title="Continue Watching" subtitle="Pick up where you left off" icon={<Zap className="h-3 w-3" />} accent="text-neon-orange" wrap={false} viewAllLink="/continue-watching">
-        <ContinueWatching items={featured} />
+        <ContinueWatching items={continueWatching} isLoading={cwLoading} />
       </Section>
 
       <Section title="Latest Episodes" subtitle="Fresh Drops" icon={<Flame className="h-3 w-3" />} accent="text-neon-pink" wrap={false} viewAllLink="/latest-episodes">
