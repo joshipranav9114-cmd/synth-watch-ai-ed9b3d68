@@ -1,32 +1,48 @@
-## Real profile stats from Supabase
+# Fix: Discussion/Reviews tab shows nothing despite stored rows
 
-Replace hardcoded numbers in `src/routes/_app.profile.tsx` with live counts.
+## Root cause (not what was suspected)
 
-### Data fetching
+The `anime_id` values are stored correctly. Existing rows on `anime_comments` for the current page (`/anime/51553`) hold `anime_id = '51553'` (text), which matches the route param exactly — no string/number mismatch.
 
-Add a `useQuery` keyed by `["profile-stats", user.id]`, enabled only when `user` exists. Run four parallel head-count queries via `Promise.all`:
+The real failure is in the embedded profile join used by `getComments` / `getReviews` in `src/lib/community.ts`:
 
 ```ts
-supabase.from("watchlist").select("*", { count: "exact", head: true }).eq("user_id", user.id)
-supabase.from("watch_progress").select("*", { count: "exact", head: true }).eq("user_id", user.id)
-supabase.from("anime_reviews").select("*", { count: "exact", head: true }).eq("user_id", user.id)
-supabase.from("anime_comments").select("*", { count: "exact", head: true }).eq("user_id", user.id)
+.select("…, profiles:user_id (id, display_name, avatar_emoji, avatar_color)")
 ```
 
-Return `{ watched, episodes, reviews, comments }` from `count` fields.
+Console shows PostgREST error `PGRST200: Could not find a relationship between 'anime_comments'/'anime_reviews' and 'user_id' in the schema cache`. The query returns `[]`, so the UI renders "No comments yet" / "No reviews".
 
-### JSX swaps (no layout changes)
+Reason: `anime_comments.user_id` and `anime_reviews.user_id` only have FKs to `auth.users(id)`. PostgREST can't auto-resolve an embed to `public.profiles` because no FK to `profiles` exists. The profile-page counts work because they don't embed — they just call `count: exact`.
 
-- "Anime Watched" `248` → `stats.watched`
-- "Episodes" `5,102` → `stats.episodes` (from `watch_progress` row count, per your selection)
-- "Reviews" `0` → `stats.reviews`
-- "Comments" `0` → `stats.comments`
+## Fix
 
-### Loading state
+Add a second FK on each affected table pointing `user_id → public.profiles(id)`. Profiles are created 1:1 with auth users by the existing `handle_new_user` trigger, so this is safe.
 
-While `isLoading`, render `<Skeleton className="h-7 w-12 mx-auto" />` in place of each number node. All wrapper classes (`text-2xl font-extrabold`, neon colors, glass cards, grid) stay exactly as-is.
+**Migration** (new file `supabase/migrations/<ts>_community_profile_fks.sql`):
 
-### Files
+```sql
+ALTER TABLE public.anime_comments
+  ADD CONSTRAINT anime_comments_user_id_profiles_fkey
+  FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
 
-- Edit `src/routes/_app.profile.tsx` — add query + skeleton; swap four values.
-- No DB migrations, no other files touched.
+ALTER TABLE public.anime_reviews
+  ADD CONSTRAINT anime_reviews_user_id_profiles_fkey
+  FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+
+ALTER TABLE public.discussion_messages
+  ADD CONSTRAINT discussion_messages_user_id_profiles_fkey
+  FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+```
+
+After the migration, the existing `profiles:user_id (...)` embeds resolve and the queries return rows. No client code changes needed; UI untouched.
+
+## Verification
+
+- Reload `/anime/51553` → existing comment and review render.
+- Post a new comment/review → appears immediately.
+- Profile page stat counts stay the same.
+
+## Files
+
+- New: `supabase/migrations/<timestamp>_community_profile_fks.sql`
+- No other files changed.
