@@ -1,10 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { LogOut, Settings, Shield, Palette, Award, Star, MessageSquare } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { UserAvatar } from "@/components/UserAvatar";
 import { getProfile, saveProfile, type UserProfile } from "@/lib/community";
 import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/profile")({ component: Profile });
@@ -74,6 +76,27 @@ function Profile() {
     }
   };
 
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    enabled: !!user,
+    queryKey: ["profile-stats", user?.id],
+    queryFn: async () => {
+      const uid = user!.id;
+      const [w, ep, rv, cm] = await Promise.all([
+        supabase.from("watchlist").select("*", { count: "exact", head: true }).eq("user_id", uid),
+        supabase.from("watch_progress").select("*", { count: "exact", head: true }).eq("user_id", uid),
+        supabase.from("anime_reviews").select("*", { count: "exact", head: true }).eq("user_id", uid),
+        supabase.from("anime_comments").select("*", { count: "exact", head: true }).eq("user_id", uid),
+      ]);
+      return {
+        watched: w.count ?? 0,
+        episodes: ep.count ?? 0,
+        reviews: rv.count ?? 0,
+        comments: cm.count ?? 0,
+      };
+    },
+  });
+  const loading = statsLoading || !user;
+
   const items = [
     { icon: Settings, label: "Account Settings" },
     { icon: Palette, label: "Interface Theme" },
@@ -93,8 +116,8 @@ function Profile() {
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-3">
-        <Stat label="Anime Watched" value="248" color="text-neon-cyan" />
-        <Stat label="Episodes" value="5,102" color="text-neon-pink" />
+        <Stat label="Anime Watched" value={stats?.watched ?? 0} color="text-neon-cyan" loading={loading} />
+        <Stat label="Episodes" value={stats?.episodes ?? 0} color="text-neon-pink" loading={loading} />
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-3">
@@ -102,14 +125,22 @@ function Profile() {
           <Star className="h-4 w-4 text-neon-orange" />
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Reviews</p>
-            <p className="text-sm font-extrabold text-neon-orange">0</p>
+            {loading ? (
+              <Skeleton className="h-4 w-8" />
+            ) : (
+              <p className="text-sm font-extrabold text-neon-orange">{stats?.reviews ?? 0}</p>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2 rounded-2xl glass p-3">
           <MessageSquare className="h-4 w-4 text-neon-cyan" />
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Comments</p>
-            <p className="text-sm font-extrabold text-neon-cyan">0</p>
+            {loading ? (
+              <Skeleton className="h-4 w-8" />
+            ) : (
+              <p className="text-sm font-extrabold text-neon-cyan">{stats?.comments ?? 0}</p>
+            )}
           </div>
         </div>
       </div>
@@ -149,11 +180,15 @@ function Profile() {
   );
 }
 
-function Stat({ label, value, color }: { label: string; value: string; color: string }) {
+function Stat({ label, value, color, loading }: { label: string; value: number | string; color: string; loading?: boolean }) {
   return (
     <div className="rounded-2xl glass p-4 text-center">
       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
-      <p className={`mt-1 text-2xl font-extrabold ${color}`}>{value}</p>
+      {loading ? (
+        <Skeleton className="mt-1 h-7 w-12 mx-auto" />
+      ) : (
+        <p className={`mt-1 text-2xl font-extrabold ${color}`}>{typeof value === "number" ? value.toLocaleString() : value}</p>
+      )}
     </div>
   );
 }
