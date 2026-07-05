@@ -126,7 +126,7 @@ function Detail() {
             <Play className="h-4 w-4 fill-current" /> {progress ? `Resume EP ${progress.episode}` : `Watch on ${primary.name}`}
           </a>
           {anime.youtubeId && (
-            <button onClick={() => setTrailerOpen(true)} className="flex h-13 flex-1 items-center justify-center gap-2 rounded-full glass px-4 text-sm font-black uppercase tracking-widest text-foreground transition-transform active:scale-[0.98]">
+            <button onClick={() => setTrailerOpen(true)} className="flex h-13 flex-none items-center justify-center gap-2 rounded-full glass px-4 text-sm font-black uppercase tracking-widest text-foreground transition-transform active:scale-[0.98]">
               <Play className="h-4 w-4 fill-current" /> Trailer
             </button>
           )}
