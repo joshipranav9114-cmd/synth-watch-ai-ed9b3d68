@@ -29,6 +29,7 @@ type JikanAnime = {
   studios: { name: string }[];
   synopsis: string | null;
   aired?: { from?: string | null };
+  trailer?: { youtube_id?: string | null; url?: string | null; embed_url?: string | null };
 };
 
 export function normalize(a: JikanAnime): Anime {
