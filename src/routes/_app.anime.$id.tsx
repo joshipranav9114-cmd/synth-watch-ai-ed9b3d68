@@ -191,6 +191,22 @@ function Detail() {
           <AnimeComments animeId={id} user={user} />
         </section>
       )}
+      {trailerOpen && (
+        <Dialog open={trailerOpen} onOpenChange={setTrailerOpen}>
+          <DialogContent className="max-w-3xl overflow-hidden rounded-2xl border-0 bg-background p-0 glass card-glow">
+            <DialogTitle className="sr-only">{anime.title} Trailer</DialogTitle>
+            <div className="aspect-video w-full">
+              <iframe
+                src={`https://www.youtube.com/embed/${anime.youtubeId}`}
+                title={`${anime.title} trailer`}
+                className="h-full w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </main>
   );
 }
