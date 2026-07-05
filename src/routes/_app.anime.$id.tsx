@@ -125,6 +125,11 @@ function Detail() {
             className="flex h-13 flex-1 items-center justify-center gap-2 rounded-full bg-gradient-cr py-4 text-sm font-black uppercase tracking-widest text-background shadow-orange transition-transform active:scale-[0.98]">
             <Play className="h-4 w-4 fill-current" /> {progress ? `Resume EP ${progress.episode}` : `Watch on ${primary.name}`}
           </a>
+          {anime.youtubeId && (
+            <button onClick={() => setTrailerOpen(true)} className="flex h-13 flex-1 items-center justify-center gap-2 rounded-full glass px-4 text-sm font-black uppercase tracking-widest text-foreground transition-transform active:scale-[0.98]">
+              <Play className="h-4 w-4 fill-current" /> Trailer
+            </button>
+          )}
           <button onClick={toggleSave} className="flex h-13 items-center justify-center rounded-full glass px-5 text-sm font-bold">
             {saved ? <BookmarkCheck className="h-4 w-4 text-neon-pink" /> : <Bookmark className="h-4 w-4 text-foreground" />}
           </button>
