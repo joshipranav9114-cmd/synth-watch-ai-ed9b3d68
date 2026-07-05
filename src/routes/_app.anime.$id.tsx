@@ -12,6 +12,7 @@ import { AnimeComments } from "@/components/AnimeComments";
 import { getAnimeRatingStats } from "@/lib/community";
 import { getProgressFor, upsertProgress, type WatchProgress } from "@/lib/watch-progress";
 import { useQueryClient } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_app/anime/$id")({ component: Detail });
 
