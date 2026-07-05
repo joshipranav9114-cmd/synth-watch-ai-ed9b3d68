@@ -12,6 +12,7 @@ export type Anime = {
   studio: string;
   match: number;
   synopsis: string;
+  youtubeId?: string;
 };
 
 const JIKAN = "https://api.jikan.moe/v4";
@@ -28,7 +29,33 @@ type JikanAnime = {
   studios: { name: string }[];
   synopsis: string | null;
   aired?: { from?: string | null };
+  trailer?: {
+    youtube_id?: string | null;
+    url?: string | null;
+    embed_url?: string | null;
+  };
 };
+
+function extractYouTubeId(trailer?: JikanAnime["trailer"]): string | undefined {
+  if (!trailer) return undefined;
+  if (trailer.youtube_id && trailer.youtube_id.trim()) return trailer.youtube_id;
+
+  const parse = (url: string | null | undefined): string | undefined => {
+    if (!url) return undefined;
+    try {
+      const u = new URL(url);
+      if (u.pathname.startsWith("/embed/")) return u.pathname.split("/")[2].split("?")[0];
+      if (u.host.includes("youtu.be")) return u.pathname.slice(1).split("?")[0];
+      if (u.host.includes("youtube.com") || u.host.includes("youtube-nocookie.com")) {
+        return u.searchParams.get("v") || u.searchParams.get("video_id") || undefined;
+      }
+    } catch {
+      return undefined;
+    }
+  };
+
+  return parse(trailer.embed_url) || parse(trailer.url);
+}
 
 export function normalize(a: JikanAnime): Anime {
   // deterministic "AI match %" derived from score so it stays consistent
@@ -46,6 +73,7 @@ export function normalize(a: JikanAnime): Anime {
     studio: a.studios?.[0]?.name ?? "—",
     match,
     synopsis: a.synopsis ?? "No synopsis available.",
+    youtubeId: extractYouTubeId(a.trailer),
   };
 }
 

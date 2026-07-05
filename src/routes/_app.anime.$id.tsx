@@ -12,6 +12,7 @@ import { AnimeComments } from "@/components/AnimeComments";
 import { getAnimeRatingStats } from "@/lib/community";
 import { getProgressFor, upsertProgress, type WatchProgress } from "@/lib/watch-progress";
 import { useQueryClient } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_app/anime/$id")({ component: Detail });
 
@@ -24,6 +25,7 @@ function Detail() {
   const [activeSection, setActiveSection] = useState<"info" | "reviews" | "discuss">("info");
   const [communityStats, setCommunityStats] = useState<{ average: number; total: number; distribution: number[] }>({ average: 0, total: 0, distribution: Array(10).fill(0) });
   const [progress, setProgress] = useState<WatchProgress | null>(null);
+  const [trailerOpen, setTrailerOpen] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -123,6 +125,11 @@ function Detail() {
             className="flex h-13 flex-1 items-center justify-center gap-2 rounded-full bg-gradient-cr py-4 text-sm font-black uppercase tracking-widest text-background shadow-orange transition-transform active:scale-[0.98]">
             <Play className="h-4 w-4 fill-current" /> {progress ? `Resume EP ${progress.episode}` : `Watch on ${primary.name}`}
           </a>
+          {anime.youtubeId && (
+            <button onClick={() => setTrailerOpen(true)} className="flex h-13 flex-none items-center justify-center gap-2 rounded-full glass px-4 text-sm font-black uppercase tracking-widest text-foreground transition-transform active:scale-[0.98]">
+              <Play className="h-4 w-4 fill-current" /> Trailer
+            </button>
+          )}
           <button onClick={toggleSave} className="flex h-13 items-center justify-center rounded-full glass px-5 text-sm font-bold">
             {saved ? <BookmarkCheck className="h-4 w-4 text-neon-pink" /> : <Bookmark className="h-4 w-4 text-foreground" />}
           </button>
@@ -183,6 +190,22 @@ function Detail() {
           </div>
           <AnimeComments animeId={id} user={user} />
         </section>
+      )}
+      {trailerOpen && (
+        <Dialog open={trailerOpen} onOpenChange={setTrailerOpen}>
+          <DialogContent className="max-w-3xl overflow-hidden rounded-2xl border-0 bg-background p-0 glass card-glow">
+            <DialogTitle className="sr-only">{anime.title} Trailer</DialogTitle>
+            <div className="aspect-video w-full">
+              <iframe
+                src={`https://www.youtube.com/embed/${anime.youtubeId}`}
+                title={`${anime.title} trailer`}
+                className="h-full w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </main>
   );
