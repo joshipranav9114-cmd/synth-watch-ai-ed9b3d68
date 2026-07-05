@@ -61,7 +61,6 @@ export function normalize(a: JikanAnime): Anime {
   // deterministic "AI match %" derived from score so it stays consistent
   const score = a.score ?? 7.5;
   const match = Math.min(99, Math.max(75, Math.round(score * 10 + (a.mal_id % 7))));
-  const rawTrailer = a.trailer?.youtube_id;
   return {
     id: String(a.mal_id),
     malId: a.mal_id,
@@ -74,7 +73,7 @@ export function normalize(a: JikanAnime): Anime {
     studio: a.studios?.[0]?.name ?? "—",
     match,
     synopsis: a.synopsis ?? "No synopsis available.",
-    youtubeId: rawTrailer && rawTrailer.trim() ? rawTrailer : undefined,
+    youtubeId: extractYouTubeId(a.trailer),
   };
 }
 
