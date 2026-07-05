@@ -12,6 +12,7 @@ export type Anime = {
   studio: string;
   match: number;
   synopsis: string;
+  youtubeId?: string;
 };
 
 const JIKAN = "https://api.jikan.moe/v4";
