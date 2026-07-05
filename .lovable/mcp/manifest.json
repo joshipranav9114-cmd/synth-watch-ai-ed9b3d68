@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "aniverse-mcp",
+      "version": "0.1.0",
+      "title": "AniVerse"
+    },
+    "tools": [
+      {
+        "name": "search_anime",
+        "title": "Search anime",
+        "description": "Search the AniVerse anime catalog by keyword. Returns matching anime with title, score, year, genres, synopsis, cover image, and the AniVerse detail URL.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Search query, e.g. an anime title or keyword."
+            },
+            "limit": {
+              "description": "Max results (default 8).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            }
+          },
+          "required": [
+            "query"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_anime",
+        "title": "Get anime details",
+        "description": "Fetch full details for a single anime by MyAnimeList ID: title, score, episodes, studios, genres, synopsis, trailer, and the AniVerse detail URL.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "MyAnimeList ID of the anime."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_anime",
+        "title": "List anime by category",
+        "description": "Browse curated anime lists on AniVerse: top-rated, currently airing this season, or upcoming releases.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "enum": [
+                "top",
+                "current_season",
+                "upcoming"
+              ],
+              "description": "Which curated list to return."
+            }
+          },
+          "required": [
+            "category"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
