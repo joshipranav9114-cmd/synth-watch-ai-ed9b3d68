@@ -25,6 +25,7 @@ function Detail() {
   const [activeSection, setActiveSection] = useState<"info" | "reviews" | "discuss">("info");
   const [communityStats, setCommunityStats] = useState<{ average: number; total: number; distribution: number[] }>({ average: 0, total: 0, distribution: Array(10).fill(0) });
   const [progress, setProgress] = useState<WatchProgress | null>(null);
+  const [trailerOpen, setTrailerOpen] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
