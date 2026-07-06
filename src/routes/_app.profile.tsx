@@ -24,6 +24,66 @@ const GENRE_BADGE: Record<string, string> = {
 };
 const DEFAULT_BADGE = "Anime Explorer";
 
+type Achievement = {
+  id: string;
+  icon: string;
+  label: string;
+  unlocked: (s: { watchlist: number; progress: number; reviews: number; comments: number }) => boolean;
+  progress: (s: { watchlist: number; progress: number; reviews: number; comments: number }) => string;
+};
+
+const ACHIEVEMENTS: Achievement[] = [
+  {
+    id: "first-watch",
+    icon: "🌸",
+    label: "First Watch",
+    unlocked: (s) => s.watchlist >= 1,
+    progress: (s) => `${Math.min(s.watchlist, 1)}/1 watched`,
+  },
+  {
+    id: "binge-mode",
+    icon: "🔥",
+    label: "Binge Mode",
+    unlocked: (s) => s.progress >= 5,
+    progress: (s) => `${Math.min(s.progress, 5)}/5 tracked`,
+  },
+  {
+    id: "seasonal-fan",
+    icon: "⭐",
+    label: "Seasonal Fan",
+    unlocked: (s) => s.watchlist >= 10,
+    progress: (s) => `${Math.min(s.watchlist, 10)}/10 watched`,
+  },
+  {
+    id: "critic",
+    icon: "📝",
+    label: "Critic",
+    unlocked: (s) => s.reviews >= 1,
+    progress: (s) => `${Math.min(s.reviews, 1)}/1 review`,
+  },
+  {
+    id: "community-voice",
+    icon: "💬",
+    label: "Community Voice",
+    unlocked: (s) => s.comments >= 3,
+    progress: (s) => `${Math.min(s.comments, 3)}/3 comments`,
+  },
+  {
+    id: "top-reviewer",
+    icon: "🏆",
+    label: "Top Reviewer",
+    unlocked: (s) => s.reviews >= 5,
+    progress: (s) => `${Math.min(s.reviews, 5)}/5 reviews`,
+  },
+  {
+    id: "aniverse-legend",
+    icon: "👑",
+    label: "AniVerse Legend",
+    unlocked: (s) => s.watchlist >= 50,
+    progress: (s) => `${Math.min(s.watchlist, 50)}/50 watched`,
+  },
+];
+
 function Profile() {
   const { user, signOut } = useAuth();
   const nav = useNavigate();
