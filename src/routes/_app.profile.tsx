@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { LogOut, Settings, Shield, Palette, Award, Star, MessageSquare } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { UserAvatar } from "@/components/UserAvatar";
 import { getProfile, saveProfile, type UserProfile } from "@/lib/community";
@@ -10,6 +10,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/profile")({ component: Profile });
+
+const GENRE_BADGE: Record<string, string> = {
+  Action: "Shonen Warrior",
+  Romance: "Hopeless Romantic",
+  Horror: "Dark Soul",
+  Comedy: "Laugh Master",
+  Fantasy: "Isekai Traveller",
+  "Sci-Fi": "Cyber Mind",
+  "Slice of Life": "Chill Watcher",
+  Mystery: "Detective Eye",
+  Sports: "Peak Performer",
+};
+const DEFAULT_BADGE = "Anime Explorer";
 
 function Profile() {
   const { user, signOut } = useAuth();
@@ -97,6 +110,40 @@ function Profile() {
   });
   const loading = statsLoading || !user;
 
+  // Fetch watchlist anime IDs, then their genres via Jikan
+  const { data: watchlistIds } = useQuery({
+    enabled: !!user,
+    queryKey: ["watchlist-ids", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("watchlist").select("anime_id").eq("user_id", user!.id);
+      return (data ?? []).map((r) => r.anime_id).filter(Boolean) as string[];
+    },
+  });
+
+  const genreQueries = useQueries({
+    queries: (watchlistIds ?? []).map((id) => ({
+      queryKey: ["jikan", "anime", id],
+      queryFn: async () => {
+        const r = await fetch(`https://api.jikan.moe/v4/anime/${id}`);
+        if (!r.ok) return [] as string[];
+        const j = await r.json();
+        return (j.data?.genres ?? []).map((g: { name: string }) => g.name) as string[];
+      },
+      staleTime: 1000 * 60 * 60 * 6,
+    })),
+  });
+  const badgeLoading = !watchlistIds || genreQueries.some((q) => q.isLoading);
+  const badgeLabel = (() => {
+    if (!watchlistIds || watchlistIds.length === 0) return DEFAULT_BADGE;
+    const counts: Record<string, number> = {};
+    for (const q of genreQueries) {
+      for (const g of q.data ?? []) counts[g] = (counts[g] ?? 0) + 1;
+    }
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    if (!top) return DEFAULT_BADGE;
+    return GENRE_BADGE[top[0]] ?? DEFAULT_BADGE;
+  })();
+
   const items = [
     { icon: Settings, label: "Account Settings" },
     { icon: Palette, label: "Interface Theme" },
@@ -111,7 +158,13 @@ function Profile() {
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-secondary px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-secondary-foreground whitespace-nowrap">PRO</div>
         </div>
         <h2 className="mt-5 text-2xl font-bold capitalize text-foreground">{profile.display_name}</h2>
-        <span className="mt-2 inline-block rounded-full bg-primary/20 px-3 py-1 text-xs font-semibold text-neon-pink">Anime Soul: Seinen Expert</span>
+        {badgeLoading ? (
+          <Skeleton className="mt-2 h-6 w-40 rounded-full" />
+        ) : (
+          <span className="mt-2 inline-block rounded-full bg-primary/20 px-3 py-1 text-xs font-semibold text-neon-pink">
+            Anime Soul: {badgeLabel}
+          </span>
+        )}
         <p className="mt-1 text-[11px] text-muted-foreground">Tap avatar to customise</p>
       </div>
 
