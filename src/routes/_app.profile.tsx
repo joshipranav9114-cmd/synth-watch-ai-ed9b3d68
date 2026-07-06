@@ -204,6 +204,17 @@ function Profile() {
     return GENRE_BADGE[top[0]] ?? DEFAULT_BADGE;
   })();
 
+  const achievementStats = {
+    watchlist: stats?.watched ?? 0,
+    progress: stats?.episodes ?? 0,
+    reviews: stats?.reviews ?? 0,
+    comments: stats?.comments ?? 0,
+  };
+
+  const unlockedIds = new Set(ACHIEVEMENTS.filter((a) => a.unlocked(achievementStats)).map((a) => a.id));
+  const allUnlocked = unlockedIds.size === ACHIEVEMENTS.length;
+  const hiddenUnlocked = allUnlocked;
+
   const items = [
     { icon: Settings, label: "Account Settings" },
     { icon: Palette, label: "Interface Theme" },
