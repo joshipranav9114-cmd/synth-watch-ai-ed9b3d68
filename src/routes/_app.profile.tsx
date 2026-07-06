@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { LogOut, Settings, Shield, Palette, Award, Star, MessageSquare, Lock } from "lucide-react";
+import { LogOut, Settings, Shield, Palette, Star, MessageSquare, Lock } from "lucide-react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { UserAvatar } from "@/components/UserAvatar";
