@@ -275,14 +275,59 @@ function Profile() {
           <span className="rounded-md bg-primary/20 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-neon-pink">AI Analyzed</span>
         </div>
         <div className="flex gap-3 overflow-x-auto scrollbar-hide smooth-scroll">
-          {["Seasonal", "Binge", "Top Reviewer", "Hidden"].map((t, i) => (
-            <div key={t} className={`flex w-24 flex-shrink-0 flex-col items-center gap-2 rounded-2xl border border-border p-3 ${i === 0 ? "shadow-cyan" : ""}`}>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                <Award className="h-5 w-5 text-foreground" />
+          {loading ? (
+            <>
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex w-24 flex-shrink-0 flex-col items-center gap-2 rounded-2xl border border-border p-3">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              ))}
+            </>
+          ) : (
+            <>
+              {ACHIEVEMENTS.map((a) => {
+                const unlocked = unlockedIds.has(a.id);
+                return (
+                  <div
+                    key={a.id}
+                    className={`flex w-24 flex-shrink-0 flex-col items-center gap-2 rounded-2xl border p-3 transition ${
+                      unlocked
+                        ? "border-neon-cyan/50 bg-neon-cyan/10 shadow-cyan"
+                        : "border-border bg-muted/30 opacity-70"
+                    }`}
+                  >
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-full text-xl ${unlocked ? "bg-neon-cyan/20" : "bg-muted"}`}>
+                      {unlocked ? a.icon : <Lock className="h-4 w-4 text-muted-foreground" />}
+                    </div>
+                    <span className={`text-center text-[10px] font-bold uppercase tracking-wider leading-tight ${unlocked ? "text-neon-cyan" : "text-muted-foreground"}`}>
+                      {a.label}
+                    </span>
+                    {!unlocked && (
+                      <span className="text-[9px] text-muted-foreground">{a.progress(achievementStats)}</span>
+                    )}
+                  </div>
+                );
+              })}
+              <div
+                className={`flex w-24 flex-shrink-0 flex-col items-center gap-2 rounded-2xl border p-3 transition ${
+                  hiddenUnlocked
+                    ? "border-neon-pink/50 bg-neon-pink/10 shadow-pink"
+                    : "border-border bg-muted/30 opacity-70"
+                }`}
+              >
+                <div className={`flex h-10 w-10 items-center justify-center rounded-full text-xl ${hiddenUnlocked ? "bg-neon-pink/20" : "bg-muted"}`}>
+                  {hiddenUnlocked ? "🔍" : <Lock className="h-4 w-4 text-muted-foreground" />}
+                </div>
+                <span className={`text-center text-[10px] font-bold uppercase tracking-wider leading-tight ${hiddenUnlocked ? "text-neon-pink" : "text-muted-foreground"}`}>
+                  Hidden
+                </span>
+                {!hiddenUnlocked && (
+                  <span className="text-[9px] text-muted-foreground">{unlockedIds.size}/{ACHIEVEMENTS.length} unlocked</span>
+                )}
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t}</span>
-            </div>
-          ))}
+            </>
+          )}
         </div>
       </div>
 
