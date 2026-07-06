@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { LogOut, Settings, Shield, Palette, Award, Star, MessageSquare } from "lucide-react";
+import { LogOut, Settings, Shield, Palette, Star, MessageSquare, Lock } from "lucide-react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -23,6 +23,66 @@ const GENRE_BADGE: Record<string, string> = {
   Sports: "Peak Performer",
 };
 const DEFAULT_BADGE = "Anime Explorer";
+
+type Achievement = {
+  id: string;
+  icon: string;
+  label: string;
+  unlocked: (s: { watchlist: number; progress: number; reviews: number; comments: number }) => boolean;
+  progress: (s: { watchlist: number; progress: number; reviews: number; comments: number }) => string;
+};
+
+const ACHIEVEMENTS: Achievement[] = [
+  {
+    id: "first-watch",
+    icon: "🌸",
+    label: "First Watch",
+    unlocked: (s) => s.watchlist >= 1,
+    progress: (s) => `${Math.min(s.watchlist, 1)}/1 watched`,
+  },
+  {
+    id: "binge-mode",
+    icon: "🔥",
+    label: "Binge Mode",
+    unlocked: (s) => s.progress >= 5,
+    progress: (s) => `${Math.min(s.progress, 5)}/5 tracked`,
+  },
+  {
+    id: "seasonal-fan",
+    icon: "⭐",
+    label: "Seasonal Fan",
+    unlocked: (s) => s.watchlist >= 10,
+    progress: (s) => `${Math.min(s.watchlist, 10)}/10 watched`,
+  },
+  {
+    id: "critic",
+    icon: "📝",
+    label: "Critic",
+    unlocked: (s) => s.reviews >= 1,
+    progress: (s) => `${Math.min(s.reviews, 1)}/1 review`,
+  },
+  {
+    id: "community-voice",
+    icon: "💬",
+    label: "Community Voice",
+    unlocked: (s) => s.comments >= 3,
+    progress: (s) => `${Math.min(s.comments, 3)}/3 comments`,
+  },
+  {
+    id: "top-reviewer",
+    icon: "🏆",
+    label: "Top Reviewer",
+    unlocked: (s) => s.reviews >= 5,
+    progress: (s) => `${Math.min(s.reviews, 5)}/5 reviews`,
+  },
+  {
+    id: "aniverse-legend",
+    icon: "👑",
+    label: "AniVerse Legend",
+    unlocked: (s) => s.watchlist >= 50,
+    progress: (s) => `${Math.min(s.watchlist, 50)}/50 watched`,
+  },
+];
 
 function Profile() {
   const { user, signOut } = useAuth();
@@ -144,6 +204,17 @@ function Profile() {
     return GENRE_BADGE[top[0]] ?? DEFAULT_BADGE;
   })();
 
+  const achievementStats = {
+    watchlist: stats?.watched ?? 0,
+    progress: stats?.episodes ?? 0,
+    reviews: stats?.reviews ?? 0,
+    comments: stats?.comments ?? 0,
+  };
+
+  const unlockedIds = new Set(ACHIEVEMENTS.filter((a) => a.unlocked(achievementStats)).map((a) => a.id));
+  const allUnlocked = unlockedIds.size === ACHIEVEMENTS.length;
+  const hiddenUnlocked = allUnlocked;
+
   const items = [
     { icon: Settings, label: "Account Settings" },
     { icon: Palette, label: "Interface Theme" },
@@ -204,14 +275,59 @@ function Profile() {
           <span className="rounded-md bg-primary/20 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-neon-pink">AI Analyzed</span>
         </div>
         <div className="flex gap-3 overflow-x-auto scrollbar-hide smooth-scroll">
-          {["Seasonal", "Binge", "Top Reviewer", "Hidden"].map((t, i) => (
-            <div key={t} className={`flex w-24 flex-shrink-0 flex-col items-center gap-2 rounded-2xl border border-border p-3 ${i === 0 ? "shadow-cyan" : ""}`}>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                <Award className="h-5 w-5 text-foreground" />
+          {loading ? (
+            <>
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex w-24 flex-shrink-0 flex-col items-center gap-2 rounded-2xl border border-border p-3">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              ))}
+            </>
+          ) : (
+            <>
+              {ACHIEVEMENTS.map((a) => {
+                const unlocked = unlockedIds.has(a.id);
+                return (
+                  <div
+                    key={a.id}
+                    className={`flex w-24 flex-shrink-0 flex-col items-center gap-2 rounded-2xl border p-3 transition ${
+                      unlocked
+                        ? "border-neon-cyan/50 bg-neon-cyan/10 shadow-cyan"
+                        : "border-border bg-muted/30 opacity-70"
+                    }`}
+                  >
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-full text-xl ${unlocked ? "bg-neon-cyan/20" : "bg-muted"}`}>
+                      {unlocked ? a.icon : <Lock className="h-4 w-4 text-muted-foreground" />}
+                    </div>
+                    <span className={`text-center text-[10px] font-bold uppercase tracking-wider leading-tight ${unlocked ? "text-neon-cyan" : "text-muted-foreground"}`}>
+                      {a.label}
+                    </span>
+                    {!unlocked && (
+                      <span className="text-[9px] text-muted-foreground">{a.progress(achievementStats)}</span>
+                    )}
+                  </div>
+                );
+              })}
+              <div
+                className={`flex w-24 flex-shrink-0 flex-col items-center gap-2 rounded-2xl border p-3 transition ${
+                  hiddenUnlocked
+                    ? "border-neon-pink/50 bg-neon-pink/10 shadow-pink"
+                    : "border-border bg-muted/30 opacity-70"
+                }`}
+              >
+                <div className={`flex h-10 w-10 items-center justify-center rounded-full text-xl ${hiddenUnlocked ? "bg-neon-pink/20" : "bg-muted"}`}>
+                  {hiddenUnlocked ? "🔍" : <Lock className="h-4 w-4 text-muted-foreground" />}
+                </div>
+                <span className={`text-center text-[10px] font-bold uppercase tracking-wider leading-tight ${hiddenUnlocked ? "text-neon-pink" : "text-muted-foreground"}`}>
+                  Hidden
+                </span>
+                {!hiddenUnlocked && (
+                  <span className="text-[9px] text-muted-foreground">{unlockedIds.size}/{ACHIEVEMENTS.length} unlocked</span>
+                )}
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t}</span>
-            </div>
-          ))}
+            </>
+          )}
         </div>
       </div>
 
