@@ -155,26 +155,59 @@ export function useAnimeById(id: string | number) {
   });
 }
 
-export function useSearchAnime(q: string, genre: string) {
-  // Jikan genre IDs
+export type SearchFilters = {
+  year?: string;
+  minScore?: string;
+  type?: string;
+  status?: string;
+  orderBy?: string;
+};
+
+export function useSearchAnime(q: string, genre: string, filters: SearchFilters = {}) {
   const genreMap: Record<string, number> = {
-    Action: 1,
-    Adventure: 2,
-    Comedy: 4,
-    Drama: 8,
-    Fantasy: 10,
-    Romance: 22,
-    "Sci-Fi": 24,
-    "Slice of Life": 36,
-    Supernatural: 37,
-    Mecha: 18,
+    Action: 1, Adventure: 2, Comedy: 4, Drama: 8, Fantasy: 10,
+    Romance: 22, "Sci-Fi": 24, "Slice of Life": 36, Supernatural: 37, Mecha: 18,
   };
-  const params = new URLSearchParams({ limit: "24", order_by: "score", sort: "desc", sfw: "true" });
+  const orderByMap: Record<string, string> = {
+    Popularity: "popularity",
+    Score: "score",
+    Title: "title",
+    Newest: "start_date",
+  };
+  const orderBy = filters.orderBy && orderByMap[filters.orderBy] ? orderByMap[filters.orderBy] : "score";
+  const sort = filters.orderBy === "Title" ? "asc" : filters.orderBy === "Popularity" ? "asc" : "desc";
+
+  const params = new URLSearchParams({ limit: "24", order_by: orderBy, sort, sfw: "true" });
   if (q) params.set("q", q);
   if (genre && genre !== "All" && genreMap[genre]) params.set("genres", String(genreMap[genre]));
 
+  // Year filter
+  if (filters.year && filters.year !== "Any") {
+    const y = filters.year;
+    if (y === "Before 2010") {
+      params.set("end_date", "2009-12-31");
+    } else if (y.includes("-")) {
+      const [a, b] = y.split("-");
+      params.set("start_date", `${a}-01-01`);
+      params.set("end_date", `${b}-12-31`);
+    } else {
+      params.set("start_date", `${y}-01-01`);
+      params.set("end_date", `${y}-12-31`);
+    }
+  }
+  if (filters.minScore && filters.minScore !== "Any") {
+    params.set("min_score", filters.minScore.replace("+", ""));
+  }
+  if (filters.type && filters.type !== "Any") {
+    params.set("type", filters.type.toLowerCase());
+  }
+  if (filters.status && filters.status !== "Any") {
+    const statusMap: Record<string, string> = { Airing: "airing", Completed: "complete", Upcoming: "upcoming" };
+    if (statusMap[filters.status]) params.set("status", statusMap[filters.status]);
+  }
+
   return useQuery({
-    queryKey: ["jikan", "search", q, genre],
+    queryKey: ["jikan", "search", q, genre, filters],
     queryFn: async () => {
       const r = await jfetch<{ data: JikanAnime[] }>(`/anime?${params.toString()}`);
       return r.data.map(normalize);
