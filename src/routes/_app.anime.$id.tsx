@@ -197,7 +197,7 @@ function Detail() {
             <DialogTitle className="sr-only">{anime.title} Trailer</DialogTitle>
             <div className="aspect-video w-full">
               <iframe
-                src={`https://www.youtube.com/embed/${anime.youtubeId}?autoplay=1&rel=0`}
+                src={`https://www.youtube.com/embed/${anime.youtubeId}?autoplay=1&rel=0&modestbranding=1`}
                 title={`${anime.title} trailer`}
                 className="h-full w-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
