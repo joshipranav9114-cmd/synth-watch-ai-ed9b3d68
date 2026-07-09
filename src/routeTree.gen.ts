@@ -29,11 +29,11 @@ import { Route as AppCommunityRouteImport } from './routes/_app.community'
 import { Route as AppAssistantRouteImport } from './routes/_app.assistant'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
-import { Route as AppCommunityAnimeIdRouteImport } from './routes/_app.community.$animeId'
-import { Route as AppAnimeIdRouteImport } from './routes/_app.anime.$id'
-import { Route as AppSettingsAccountRouteImport } from './routes/_app.settings.account'
 import { Route as AppSettingsThemeRouteImport } from './routes/_app.settings.theme'
 import { Route as AppSettingsPrivacyRouteImport } from './routes/_app.settings.privacy'
+import { Route as AppSettingsAccountRouteImport } from './routes/_app.settings.account'
+import { Route as AppCommunityAnimeIdRouteImport } from './routes/_app.community.$animeId'
+import { Route as AppAnimeIdRouteImport } from './routes/_app.anime.$id'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -137,21 +137,6 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AppCommunityAnimeIdRoute = AppCommunityAnimeIdRouteImport.update({
-  id: '/$animeId',
-  path: '/$animeId',
-  getParentRoute: () => AppCommunityRoute,
-} as any)
-const AppAnimeIdRoute = AppAnimeIdRouteImport.update({
-  id: '/anime/$id',
-  path: '/anime/$id',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSettingsAccountRoute = AppSettingsAccountRouteImport.update({
-  id: '/settings/account',
-  path: '/settings/account',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppSettingsThemeRoute = AppSettingsThemeRouteImport.update({
   id: '/settings/theme',
   path: '/settings/theme',
@@ -160,6 +145,21 @@ const AppSettingsThemeRoute = AppSettingsThemeRouteImport.update({
 const AppSettingsPrivacyRoute = AppSettingsPrivacyRouteImport.update({
   id: '/settings/privacy',
   path: '/settings/privacy',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsAccountRoute = AppSettingsAccountRouteImport.update({
+  id: '/settings/account',
+  path: '/settings/account',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCommunityAnimeIdRoute = AppCommunityAnimeIdRouteImport.update({
+  id: '/$animeId',
+  path: '/$animeId',
+  getParentRoute: () => AppCommunityRoute,
+} as any)
+const AppAnimeIdRoute = AppAnimeIdRouteImport.update({
+  id: '/anime/$id',
+  path: '/anime/$id',
   getParentRoute: () => AppRoute,
 } as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
@@ -193,8 +193,8 @@ export interface FileRoutesByFullPath {
   '/anime/$id': typeof AppAnimeIdRoute
   '/community/$animeId': typeof AppCommunityAnimeIdRoute
   '/settings/account': typeof AppSettingsAccountRoute
-  '/settings/theme': typeof AppSettingsThemeRoute
   '/settings/privacy': typeof AppSettingsPrivacyRoute
+  '/settings/theme': typeof AppSettingsThemeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -220,8 +220,8 @@ export interface FileRoutesByTo {
   '/anime/$id': typeof AppAnimeIdRoute
   '/community/$animeId': typeof AppCommunityAnimeIdRoute
   '/settings/account': typeof AppSettingsAccountRoute
-  '/settings/theme': typeof AppSettingsThemeRoute
   '/settings/privacy': typeof AppSettingsPrivacyRoute
+  '/settings/theme': typeof AppSettingsThemeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -249,8 +249,8 @@ export interface FileRoutesById {
   '/_app/anime/$id': typeof AppAnimeIdRoute
   '/_app/community/$animeId': typeof AppCommunityAnimeIdRoute
   '/_app/settings/account': typeof AppSettingsAccountRoute
-  '/_app/settings/theme': typeof AppSettingsThemeRoute
   '/_app/settings/privacy': typeof AppSettingsPrivacyRoute
+  '/_app/settings/theme': typeof AppSettingsThemeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -278,8 +278,8 @@ export interface FileRouteTypes {
     | '/anime/$id'
     | '/community/$animeId'
     | '/settings/account'
-    | '/settings/theme'
     | '/settings/privacy'
+    | '/settings/theme'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -305,8 +305,8 @@ export interface FileRouteTypes {
     | '/anime/$id'
     | '/community/$animeId'
     | '/settings/account'
-    | '/settings/theme'
     | '/settings/privacy'
+    | '/settings/theme'
   id:
     | '__root__'
     | '/'
@@ -333,8 +333,8 @@ export interface FileRouteTypes {
     | '/_app/anime/$id'
     | '/_app/community/$animeId'
     | '/_app/settings/account'
-    | '/_app/settings/theme'
     | '/_app/settings/privacy'
+    | '/_app/settings/theme'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -492,27 +492,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/community/$animeId': {
-      id: '/_app/community/$animeId'
-      path: '/$animeId'
-      fullPath: '/community/$animeId'
-      preLoaderRoute: typeof AppCommunityAnimeIdRouteImport
-      parentRoute: typeof AppCommunityRoute
-    }
-    '/_app/anime/$id': {
-      id: '/_app/anime/$id'
-      path: '/anime/$id'
-      fullPath: '/anime/$id'
-      preLoaderRoute: typeof AppAnimeIdRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/settings/account': {
-      id: '/_app/settings/account'
-      path: '/settings/account'
-      fullPath: '/settings/account'
-      preLoaderRoute: typeof AppSettingsAccountRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/settings/theme': {
       id: '/_app/settings/theme'
       path: '/settings/theme'
@@ -525,6 +504,27 @@ declare module '@tanstack/react-router' {
       path: '/settings/privacy'
       fullPath: '/settings/privacy'
       preLoaderRoute: typeof AppSettingsPrivacyRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings/account': {
+      id: '/_app/settings/account'
+      path: '/settings/account'
+      fullPath: '/settings/account'
+      preLoaderRoute: typeof AppSettingsAccountRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/community/$animeId': {
+      id: '/_app/community/$animeId'
+      path: '/$animeId'
+      fullPath: '/community/$animeId'
+      preLoaderRoute: typeof AppCommunityAnimeIdRouteImport
+      parentRoute: typeof AppCommunityRoute
+    }
+    '/_app/anime/$id': {
+      id: '/_app/anime/$id'
+      path: '/anime/$id'
+      fullPath: '/anime/$id'
+      preLoaderRoute: typeof AppAnimeIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/.mcp/invoke-tool/$tool': {
@@ -563,8 +563,8 @@ interface AppRouteChildren {
   AppWatchlistRoute: typeof AppWatchlistRoute
   AppAnimeIdRoute: typeof AppAnimeIdRoute
   AppSettingsAccountRoute: typeof AppSettingsAccountRoute
-  AppSettingsThemeRoute: typeof AppSettingsThemeRoute
   AppSettingsPrivacyRoute: typeof AppSettingsPrivacyRoute
+  AppSettingsThemeRoute: typeof AppSettingsThemeRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -581,8 +581,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppWatchlistRoute: AppWatchlistRoute,
   AppAnimeIdRoute: AppAnimeIdRoute,
   AppSettingsAccountRoute: AppSettingsAccountRoute,
-  AppSettingsThemeRoute: AppSettingsThemeRoute,
   AppSettingsPrivacyRoute: AppSettingsPrivacyRoute,
+  AppSettingsThemeRoute: AppSettingsThemeRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
