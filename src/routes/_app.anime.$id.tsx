@@ -136,9 +136,14 @@ function Detail() {
         <button onClick={() => nav({ to: "/home" })} className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-full glass">
           <ArrowLeft className="h-4 w-4 text-foreground" />
         </button>
-        <button onClick={toggleSave} className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full glass">
-          {saved ? <BookmarkCheck className="h-4 w-4 text-neon-pink" /> : <Bookmark className="h-4 w-4 text-foreground" />}
-        </button>
+        <div className="absolute right-4 top-4 flex items-center gap-2">
+          {saved && (
+            <StatusPicker status={status} onChange={changeStatus} size="md" />
+          )}
+          <button onClick={toggleSave} className="flex h-10 w-10 items-center justify-center rounded-full glass">
+            {saved ? <BookmarkCheck className="h-4 w-4 text-neon-pink" /> : <Bookmark className="h-4 w-4 text-foreground" />}
+          </button>
+        </div>
         <div className="absolute bottom-6 left-5 right-5">
           <div className="mb-2 inline-flex items-center gap-1.5 rounded-full glass px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-neon-pink">
             <Sparkles className="h-3 w-3" /> {anime.match}% match
