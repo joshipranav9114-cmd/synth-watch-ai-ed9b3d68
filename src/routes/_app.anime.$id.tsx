@@ -25,7 +25,6 @@ function Detail() {
   const { data: anime, isLoading } = useAnimeById(id);
   const [saved, setSaved] = useState(false);
   const [status, setStatus] = useState<WatchStatus>("planned");
-  const [watchlistId, setWatchlistId] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<"info" | "reviews" | "discuss">("info");
   const [communityStats, setCommunityStats] = useState<{ average: number; total: number; distribution: number[] }>({ average: 0, total: 0, distribution: Array(10).fill(0) });
   const [progress, setProgress] = useState<WatchProgress | null>(null);
@@ -44,11 +43,9 @@ function Detail() {
       .then(({ data }) => {
         if (data) {
           setSaved(true);
-          setWatchlistId((data as any).id);
           setStatus(((data as any).status as WatchStatus) ?? "planned");
         } else {
           setSaved(false);
-          setWatchlistId(null);
         }
       });
   }, [user, anime]);
@@ -72,11 +69,11 @@ function Detail() {
     if (saved) {
       const { error } = await supabase.from("watchlist").delete().eq("user_id", user.id).eq("anime_id", anime.id);
       if (error) { toast.error(error.message); return; }
-      setSaved(false); setWatchlistId(null); toast("Removed from watchlist");
+      setSaved(false); toast("Removed from watchlist");
     } else {
-      const { data, error } = await supabase.from("watchlist").insert({ user_id: user.id, anime_id: anime.id, anime_title: anime.title, anime_image: anime.image, status: "planned" }).select("id").single();
+      const { error } = await supabase.from("watchlist").insert({ user_id: user.id, anime_id: anime.id, anime_title: anime.title, anime_image: anime.image, status: "planned" });
       if (error) { toast.error(error.message); return; }
-      setSaved(true); setStatus("planned"); setWatchlistId(data?.id ?? null); toast.success("Added to your trophy room");
+      setSaved(true); setStatus("planned"); toast.success("Added to your trophy room");
     }
   };
 
