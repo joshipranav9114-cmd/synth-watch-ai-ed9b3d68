@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Bookmark, BookmarkCheck, MessageSquare, Play, Sparkles, Star, Users } from "lucide-react";
+import { ArrowLeft, Bookmark, BookmarkCheck, MessageSquare, Play, Share, Sparkles, Star, Users } from "lucide-react";
 import { useAnimeById } from "@/lib/anime-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -12,7 +12,7 @@ import { AnimeComments } from "@/components/AnimeComments";
 import { getAnimeRatingStats } from "@/lib/community";
 import { getProgressFor, upsertProgress, type WatchProgress } from "@/lib/watch-progress";
 import { useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+
 
 export const Route = createFileRoute("/_app/anime/$id")({ component: Detail });
 
@@ -25,7 +25,7 @@ function Detail() {
   const [activeSection, setActiveSection] = useState<"info" | "reviews" | "discuss">("info");
   const [communityStats, setCommunityStats] = useState<{ average: number; total: number; distribution: number[] }>({ average: 0, total: 0, distribution: Array(10).fill(0) });
   const [progress, setProgress] = useState<WatchProgress | null>(null);
-  const [trailerOpen, setTrailerOpen] = useState(false);
+  
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -88,6 +88,24 @@ function Detail() {
     }
   };
 
+  const handleShare = async () => {
+    if (!anime) return;
+    try {
+      if ((navigator as any).share) {
+        await (navigator as any).share({
+          title: anime.title,
+          text: `Check out ${anime.title} on AniVerse!`,
+          url: window.location.href,
+        });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success("Link copied!");
+      }
+    } catch {
+      // user cancelled or share failed — ignore
+    }
+  };
+
   return (
     <main>
       <div className="relative h-[460px]">
@@ -126,7 +144,7 @@ function Detail() {
             <Play className="h-4 w-4 fill-current" /> {progress ? `Resume EP ${progress.episode}` : `Watch on ${primary.name}`}
           </a>
           {anime.youtubeId && (
-            <button onClick={() => setTrailerOpen(true)} className="flex h-13 flex-none items-center justify-center gap-2 rounded-full glass px-4 text-sm font-black uppercase tracking-widest text-foreground transition-transform active:scale-[0.98]">
+            <button onClick={() => window.open(`https://www.youtube.com/watch?v=${anime.youtubeId}`, "_blank")} className="flex h-13 flex-none items-center justify-center gap-2 rounded-full glass px-4 text-sm font-black uppercase tracking-widest text-foreground transition-transform active:scale-[0.98]">
               <Play className="h-4 w-4 fill-current" /> Trailer
             </button>
           )}
@@ -136,6 +154,9 @@ function Detail() {
           <Link to="/community/$animeId" params={{ animeId: id }} className="flex h-13 items-center justify-center rounded-full glass px-4">
             <MessageSquare className="h-4 w-4 text-neon-cyan" />
           </Link>
+          <button onClick={handleShare} className="flex h-13 items-center justify-center rounded-full glass px-4" aria-label="Share">
+            <Share className="h-4 w-4 text-foreground" />
+          </button>
         </div>
 
         <div className="mt-5 flex rounded-2xl glass overflow-hidden">
@@ -190,22 +211,6 @@ function Detail() {
           </div>
           <AnimeComments animeId={id} user={user} />
         </section>
-      )}
-      {trailerOpen && (
-        <Dialog open={trailerOpen} onOpenChange={setTrailerOpen}>
-          <DialogContent className="max-w-3xl overflow-hidden rounded-2xl border-0 bg-background p-0 glass card-glow">
-            <DialogTitle className="sr-only">{anime.title} Trailer</DialogTitle>
-            <div className="aspect-video w-full">
-              <iframe
-                src={`https://www.youtube.com/embed/${anime.youtubeId}?autoplay=1&rel=0&modestbranding=1`}
-                title={`${anime.title} trailer`}
-                className="h-full w-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
       )}
     </main>
   );
