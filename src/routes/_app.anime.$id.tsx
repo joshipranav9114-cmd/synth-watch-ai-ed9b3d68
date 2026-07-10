@@ -12,6 +12,8 @@ import { AnimeComments } from "@/components/AnimeComments";
 import { getAnimeRatingStats } from "@/lib/community";
 import { getProgressFor, upsertProgress, type WatchProgress } from "@/lib/watch-progress";
 import { useQueryClient } from "@tanstack/react-query";
+import { StatusPicker } from "@/components/StatusPicker";
+import { STATUS_META, type WatchStatus } from "@/lib/watchlist-status";
 
 
 export const Route = createFileRoute("/_app/anime/$id")({ component: Detail });
@@ -22,6 +24,8 @@ function Detail() {
   const { user } = useAuth();
   const { data: anime, isLoading } = useAnimeById(id);
   const [saved, setSaved] = useState(false);
+  const [status, setStatus] = useState<WatchStatus>("planned");
+  const [watchlistId, setWatchlistId] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<"info" | "reviews" | "discuss">("info");
   const [communityStats, setCommunityStats] = useState<{ average: number; total: number; distribution: number[] }>({ average: 0, total: 0, distribution: Array(10).fill(0) });
   const [progress, setProgress] = useState<WatchProgress | null>(null);
@@ -36,8 +40,17 @@ function Detail() {
 
   useEffect(() => {
     if (!user || !anime) return;
-    supabase.from("watchlist").select("id").eq("user_id", user.id).eq("anime_id", anime.id).maybeSingle()
-      .then(({ data }) => setSaved(!!data));
+    supabase.from("watchlist").select("id,status").eq("user_id", user.id).eq("anime_id", anime.id).maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setSaved(true);
+          setWatchlistId((data as any).id);
+          setStatus(((data as any).status as WatchStatus) ?? "planned");
+        } else {
+          setSaved(false);
+          setWatchlistId(null);
+        }
+      });
   }, [user, anime]);
 
   useEffect(() => {
@@ -59,12 +72,21 @@ function Detail() {
     if (saved) {
       const { error } = await supabase.from("watchlist").delete().eq("user_id", user.id).eq("anime_id", anime.id);
       if (error) { toast.error(error.message); return; }
-      setSaved(false); toast("Removed from watchlist");
+      setSaved(false); setWatchlistId(null); toast("Removed from watchlist");
     } else {
-      const { error } = await supabase.from("watchlist").insert({ user_id: user.id, anime_id: anime.id, anime_title: anime.title, anime_image: anime.image, status: "planned" });
+      const { data, error } = await supabase.from("watchlist").insert({ user_id: user.id, anime_id: anime.id, anime_title: anime.title, anime_image: anime.image, status: "planned" }).select("id").single();
       if (error) { toast.error(error.message); return; }
-      setSaved(true); toast.success("Added to your trophy room");
+      setSaved(true); setStatus("planned"); setWatchlistId(data?.id ?? null); toast.success("Added to your trophy room");
     }
+  };
+
+  const changeStatus = async (s: WatchStatus) => {
+    if (!user || !anime) return;
+    const prev = status;
+    setStatus(s);
+    const { error } = await supabase.from("watchlist").update({ status: s }).eq("user_id", user.id).eq("anime_id", anime.id);
+    if (error) { setStatus(prev); toast.error(error.message); return; }
+    toast.success(`Marked as ${STATUS_META[s].label}`);
   };
 
   const primary = primaryPlatform(anime);
