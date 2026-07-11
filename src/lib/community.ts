@@ -33,6 +33,7 @@ export interface UserProfile {
   display_name: string;
   avatar_emoji: AvatarEmoji;
   avatar_color: AvatarColor;
+  avatar_url?: string | null;
 }
 
 export interface Review {
@@ -96,6 +97,7 @@ type ProfileRow = {
   display_name: string | null;
   avatar_emoji: string | null;
   avatar_color: string | null;
+  avatar_url?: string | null;
 };
 
 function profileFrom(row: ProfileRow | null, fallbackId: string): UserProfile {
@@ -104,6 +106,7 @@ function profileFrom(row: ProfileRow | null, fallbackId: string): UserProfile {
     display_name: row?.display_name ?? "Anon",
     avatar_emoji: (row?.avatar_emoji as AvatarEmoji) || "⭐",
     avatar_color: (row?.avatar_color as AvatarColor) || "purple",
+    avatar_url: row?.avatar_url ?? null,
   };
 }
 
@@ -143,7 +146,7 @@ async function hydrateReactions(
 export async function getProfile(userId: string): Promise<UserProfile> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, display_name, avatar_emoji, avatar_color")
+    .select("id, display_name, avatar_emoji, avatar_color, avatar_url")
     .eq("id", userId)
     .maybeSingle();
   if (error) console.error("[community] getProfile:", error);
@@ -157,6 +160,7 @@ export async function saveProfile(profile: UserProfile): Promise<void> {
       display_name: profile.display_name,
       avatar_emoji: profile.avatar_emoji,
       avatar_color: profile.avatar_color,
+      avatar_url: profile.avatar_url ?? null,
     })
     .eq("id", profile.id);
   if (error) console.error("[community] saveProfile:", error);
@@ -167,7 +171,7 @@ export async function saveProfile(profile: UserProfile): Promise<void> {
 export async function getReviews(animeId: string): Promise<Review[]> {
   const { data, error } = await supabase
     .from("anime_reviews")
-    .select("id, user_id, anime_id, anime_title, rating, body, created_at, profiles:user_id (id, display_name, avatar_emoji, avatar_color)")
+    .select("id, user_id, anime_id, anime_title, rating, body, created_at, profiles:user_id (id, display_name, avatar_emoji, avatar_color, avatar_url)")
     .eq("anime_id", animeId)
     .order("created_at", { ascending: false });
   if (error) { console.error("[community] getReviews:", error); return []; }
@@ -217,7 +221,7 @@ export async function deleteReview(_animeId: string, reviewId: string, userId: s
 export async function getComments(animeId: string): Promise<Comment[]> {
   const { data, error } = await supabase
     .from("anime_comments")
-    .select("id, user_id, anime_id, body, parent_id, created_at, profiles:user_id (id, display_name, avatar_emoji, avatar_color)")
+    .select("id, user_id, anime_id, body, parent_id, created_at, profiles:user_id (id, display_name, avatar_emoji, avatar_color, avatar_url)")
     .eq("anime_id", animeId)
     .order("created_at", { ascending: false });
   if (error) { console.error("[community] getComments:", error); return []; }
@@ -271,7 +275,7 @@ export async function deleteComment(_animeId: string, commentId: string, userId:
 export async function getMessages(animeId: string): Promise<DiscussionMessage[]> {
   const { data, error } = await supabase
     .from("discussion_messages")
-    .select("id, user_id, anime_id, body, created_at, profiles:user_id (id, display_name, avatar_emoji, avatar_color)")
+    .select("id, user_id, anime_id, body, created_at, profiles:user_id (id, display_name, avatar_emoji, avatar_color, avatar_url)")
     .eq("anime_id", animeId)
     .order("created_at", { ascending: true });
   if (error) { console.error("[community] getMessages:", error); return []; }
