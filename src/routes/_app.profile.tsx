@@ -124,14 +124,15 @@ function Profile() {
       .then(({ data, error }) => {
         if (cancelled) return;
         if (error) { console.error("[profile] load failed:", error); return; }
-        if (data?.display_name) {
-          setProfile((prev) => {
-            if (prev.display_name === data.display_name) return prev;
-            const next = { ...prev, display_name: data.display_name as string };
-            saveProfile(next);
-            return next;
-          });
-        }
+        if (!data) return;
+        setProfile((prev) => {
+          const nextName = (data.display_name as string | null) ?? prev.display_name;
+          const nextUrl = (data.avatar_url as string | null) ?? null;
+          if (prev.display_name === nextName && (prev.avatar_url ?? null) === nextUrl) return prev;
+          const next = { ...prev, display_name: nextName, avatar_url: nextUrl };
+          void saveProfile(next);
+          return next;
+        });
       });
     return () => { cancelled = true; };
   }, [user]);
@@ -141,7 +142,7 @@ function Profile() {
     if (!user) return;
     const { error } = await supabase
       .from("profiles")
-      .update({ display_name: next.display_name })
+      .update({ display_name: next.display_name, avatar_url: next.avatar_url ?? null })
       .eq("id", user.id);
     if (error) {
       console.error("[profile] save failed:", error);
