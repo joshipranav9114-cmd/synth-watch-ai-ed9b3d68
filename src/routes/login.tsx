@@ -8,9 +8,24 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({ component: Login });
 
+function safeNext(next: string | undefined): string {
+  if (!next) return "/home";
+  if (!next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/home";
+  return next;
+}
+
+// Route search: accept an optional `next` to preserve OAuth consent redirect.
+Route.update({
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s.next === "string" ? s.next : undefined,
+  }),
+});
+
 function Login() {
   const nav = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const search = Route.useSearch();
+  const nextPath = safeNext(search.next);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -22,8 +37,8 @@ function Login() {
 
   // Auto-redirect already-signed-in users
   useEffect(() => {
-    if (!authLoading && user) nav({ to: "/home" });
-  }, [authLoading, user, nav]);
+    if (!authLoading && user) window.location.href = nextPath;
+  }, [authLoading, user, nextPath]);
 
   // Restore remembered email for one-tap sign-in
   useEffect(() => {
@@ -71,7 +86,7 @@ function Login() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password: pw,
-          options: { emailRedirectTo: window.location.origin + "/home" },
+          options: { emailRedirectTo: window.location.origin + nextPath },
         });
         if (error) {
           // Auto-switch to sign-in if account already exists
@@ -90,7 +105,7 @@ function Login() {
           await verifyAuthenticatedUser();
           persistEmail(email);
           toast.success("Welcome to AniVerse!");
-          nav({ to: "/home" });
+          window.location.href = nextPath;
         } else if (data.user) {
           persistEmail(email);
           toast.success("Account created. Check your inbox to confirm your email.");
@@ -111,7 +126,7 @@ function Login() {
         }
         await verifyAuthenticatedUser();
         persistEmail(email);
-        nav({ to: "/home" });
+        window.location.href = nextPath;
       }
     } catch (err) {
       console.error("[auth] submit failed:", err);
@@ -125,12 +140,12 @@ function Login() {
     setGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/home",
+        redirect_uri: window.location.origin + nextPath,
       });
       if (result.error) throw result.error;
       if (result.redirected) return; // Browser navigating to Google
       await verifyAuthenticatedUser();
-      nav({ to: "/home" });
+      window.location.href = nextPath;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Google sign-in failed");
     } finally {
