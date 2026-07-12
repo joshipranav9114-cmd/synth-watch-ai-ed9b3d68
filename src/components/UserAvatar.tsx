@@ -100,7 +100,9 @@ export function UserAvatar({ profile, size = "md", editable = false, onUpdate }:
           const r = await fetch(`https://api.jikan.moe/v4/characters?q=${encodeURIComponent(q)}&limit=20&order_by=favorites&sort=desc`);
           if (!r.ok) throw new Error(`Jikan ${r.status}`);
           const j = await r.json();
-          const list = (j?.data ?? []) as JikanCharacter[];
+          const list = ((j?.data ?? []) as JikanCharacter[]).filter(
+            (c) => !!c.images?.jpg?.image_url,
+          );
           if (!alive) return;
           setResults(list.length ? list : filterFallback());
         } catch (err) {
@@ -110,7 +112,7 @@ export function UserAvatar({ profile, size = "md", editable = false, onUpdate }:
           if (alive) setSearching(false);
         }
       })();
-    }, 350);
+    }, 500);
     return () => { alive = false; clearTimeout(t); };
   }, [query, tab]);
 
@@ -241,7 +243,11 @@ export function UserAvatar({ profile, size = "md", editable = false, onUpdate }:
                   ))}
                 </div>
               ) : shownList.length === 0 ? (
-                <p className="pt-10 text-center text-sm text-muted-foreground">No characters found</p>
+                <p className="pt-10 text-center text-sm text-muted-foreground">
+                  {tab === "search"
+                    ? `No characters found for "${query.trim()}"`
+                    : "No characters found"}
+                </p>
               ) : (
                 <div className="grid grid-cols-3 gap-3">
                   {shownList.map((c) => {
