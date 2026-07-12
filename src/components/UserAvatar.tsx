@@ -26,6 +26,33 @@ type JikanCharacter = {
   images?: { jpg?: { image_url?: string } };
 };
 
+const FALLBACK_CHARACTERS: JikanCharacter[] = [
+  { mal_id: -1, name: "Naruto", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/2/284121.jpg" } } },
+  { mal_id: -2, name: "Gojo Satoru", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/9/310307.jpg" } } },
+  { mal_id: -3, name: "Levi Ackerman", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/2/241413.jpg" } } },
+  { mal_id: -4, name: "Mikasa", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/9/215563.jpg" } } },
+  { mal_id: -5, name: "Itachi", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/9/131317.jpg" } } },
+  { mal_id: -6, name: "Luffy", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/9/310307.jpg" } } },
+  { mal_id: -7, name: "Zoro", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/3/100534.jpg" } } },
+  { mal_id: -8, name: "Kakashi", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/7/284835.jpg" } } },
+  { mal_id: -9, name: "Killua", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/7/298935.jpg" } } },
+  { mal_id: -10, name: "Gon", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/11/104665.jpg" } } },
+  { mal_id: -11, name: "Zero Two", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/9/369293.jpg" } } },
+  { mal_id: -12, name: "Rem", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/10/339556.jpg" } } },
+  { mal_id: -13, name: "Nezuko", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/9/380974.jpg" } } },
+  { mal_id: -14, name: "Tanjiro", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/6/380975.jpg" } } },
+  { mal_id: -15, name: "Shinra", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/14/387130.jpg" } } },
+  { mal_id: -16, name: "Todoroki", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/8/323227.jpg" } } },
+  { mal_id: -17, name: "Bakugo", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/3/323225.jpg" } } },
+  { mal_id: -18, name: "Deku", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/8/317519.jpg" } } },
+  { mal_id: -19, name: "Edward Elric", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/11/174517.jpg" } } },
+  { mal_id: -20, name: "Spike Spiegel", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/4/50197.jpg" } } },
+  { mal_id: -21, name: "Vegeta", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/9/310307.jpg" } } },
+  { mal_id: -22, name: "Light Yagami", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/8/81474.jpg" } } },
+  { mal_id: -23, name: "L", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/9/82702.jpg" } } },
+  { mal_id: -24, name: "Ryuk", images: { jpg: { image_url: "https://cdn.myanimelist.net/images/characters/11/82699.jpg" } } },
+];
+
 export function UserAvatar({ profile, size = "md", editable = false, onUpdate }: UserAvatarProps) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(profile);
@@ -43,10 +70,19 @@ export function UserAvatar({ profile, size = "md", editable = false, onUpdate }:
   useEffect(() => {
     if (!open || popular) return;
     let alive = true;
-    fetch("https://api.jikan.moe/v4/top/characters?limit=24")
-      .then((r) => r.json())
-      .then((j) => { if (alive) setPopular((j.data ?? []) as JikanCharacter[]); })
-      .catch(() => { if (alive) setPopular([]); });
+    (async () => {
+      try {
+        const r = await fetch("https://api.jikan.moe/v4/top/characters?limit=24");
+        if (!r.ok) throw new Error(`Jikan ${r.status}`);
+        const j = await r.json();
+        const list = (j?.data ?? []) as JikanCharacter[];
+        if (!alive) return;
+        setPopular(list.length ? list : FALLBACK_CHARACTERS);
+      } catch (err) {
+        console.error("Jikan top/characters failed, using fallback:", err);
+        if (alive) setPopular(FALLBACK_CHARACTERS);
+      }
+    })();
     return () => { alive = false; };
   }, [open, popular]);
 
@@ -57,11 +93,23 @@ export function UserAvatar({ profile, size = "md", editable = false, onUpdate }:
     let alive = true;
     setSearching(true);
     const t = setTimeout(() => {
-      fetch(`https://api.jikan.moe/v4/characters?q=${encodeURIComponent(q)}&limit=20&order_by=favorites&sort=desc`)
-        .then((r) => r.json())
-        .then((j) => { if (alive) setResults((j.data ?? []) as JikanCharacter[]); })
-        .catch(() => { if (alive) setResults([]); })
-        .finally(() => { if (alive) setSearching(false); });
+      (async () => {
+        const filterFallback = () =>
+          FALLBACK_CHARACTERS.filter((c) => c.name.toLowerCase().includes(q.toLowerCase()));
+        try {
+          const r = await fetch(`https://api.jikan.moe/v4/characters?q=${encodeURIComponent(q)}&limit=20&order_by=favorites&sort=desc`);
+          if (!r.ok) throw new Error(`Jikan ${r.status}`);
+          const j = await r.json();
+          const list = (j?.data ?? []) as JikanCharacter[];
+          if (!alive) return;
+          setResults(list.length ? list : filterFallback());
+        } catch (err) {
+          console.error("Jikan character search failed, using fallback:", err);
+          if (alive) setResults(filterFallback());
+        } finally {
+          if (alive) setSearching(false);
+        }
+      })();
     }, 350);
     return () => { alive = false; clearTimeout(t); };
   }, [query, tab]);
