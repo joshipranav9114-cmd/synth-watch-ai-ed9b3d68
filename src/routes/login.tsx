@@ -6,19 +6,17 @@ import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/login")({ component: Login });
-
 function safeNext(next: string | undefined): string {
   if (!next) return "/home";
   if (!next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/home";
   return next;
 }
 
-// Route search: accept an optional `next` to preserve OAuth consent redirect.
-Route.update({
+export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => ({
     next: typeof s.next === "string" ? s.next : undefined,
   }),
+  component: Login,
 });
 
 function Login() {
