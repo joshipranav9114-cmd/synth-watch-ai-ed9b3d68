@@ -78,9 +78,15 @@ export function normalize(a: JikanAnime): Anime {
 }
 
 async function jfetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${JIKAN}${path}`);
-  if (!res.ok) throw new Error(`Jikan ${res.status}`);
-  return (await res.json()) as T;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
+  try {
+    const res = await fetch(`${JIKAN}${path}`, { signal: controller.signal });
+    if (!res.ok) throw new Error(`Jikan ${res.status}`);
+    return (await res.json()) as T;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 // MAL IDs for the featured anime requested by the user
@@ -144,6 +150,7 @@ export function useFeaturedAnime() {
   const data = queries.map((q) => q.data).filter(Boolean) as Anime[];
   const isLoading = queries.some((q) => q.isLoading);
   const isError = queries.length > 0 && queries.every((q) => q.isError);
+  const isLoading = queries.some((q) => q.isLoading) && data.length === 0;
   return { data, isLoading, isError };
 }
 

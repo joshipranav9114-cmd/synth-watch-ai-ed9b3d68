@@ -33,7 +33,7 @@ function Home() {
   const { data: featured, isLoading: featuredLoading, isError: featuredError } = useFeaturedAnime();
   const { data: trending, isLoading: trendingLoading, isError: trendingError } = useTopAnime();
   const { data: seasonal, isLoading: seasonalLoading, isError: seasonalError } = useSeasonalAnime();
-  const { data: animeOfTheDay, isLoading: aotdLoading } = useAnimeOfTheDay();
+  const { data: animeOfTheDay, isLoading: aotdLoading, isError: aotdError } = useAnimeOfTheDay();
   const { data: continueWatching, isLoading: cwLoading } = useQuery({
     queryKey: ["watch-progress", user?.id],
     queryFn: () => getContinueWatching(user!.id),

@@ -11,8 +11,13 @@ export function HeroCarousel() {
     const t = setInterval(() => setI((p) => (p + 1) % ANIME.length), 5000);
     return () => clearInterval(t);
   }, [ANIME.length]);
-  if (isLoading) {
-    return <div aria-label="Loading featured anime" className="h-[420px] w-full animate-pulse bg-muted/20" />;
+  if (isLoading && !ANIME.length) {
+    return (
+      <section aria-label="Loading featured anime" className="relative flex min-h-[300px] items-end overflow-hidden bg-background px-5 pb-10 pt-24">
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-neon-purple/20 via-background/60 to-neon-orange/10" />
+        <p className="relative heading-eyebrow text-neon-orange">Loading featured anime…</p>
+      </section>
+    );
   }
   if (!ANIME.length) {
     return (
@@ -31,7 +36,7 @@ export function HeroCarousel() {
       </section>
     );
   }
-  const a = ANIME[i];
+  const a = ANIME[i] ?? ANIME[0];
   return (
     <div className="relative block h-[640px] w-full overflow-hidden">
       <img
