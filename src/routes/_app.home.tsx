@@ -89,7 +89,7 @@ function Home() {
       </Section>
 
       {/* Anime of the Day — between For You and Top 10 */}
-      <AnimeOfTheDay anime={animeOfTheDay} isLoading={aotdLoading} />
+      <AnimeOfTheDay anime={animeOfTheDay} isLoading={aotdLoading} isError={aotdError} />
 
       <Section title="Top 10 This Week" subtitle="Trending Now" icon={<TrendingUp className="h-3 w-3" />} accent="text-neon-orange" viewAllLink="/trending">
         <CardRow items={trending?.slice(0, 10)} size="xl" ranked isLoading={trendingLoading} isError={trendingError} />

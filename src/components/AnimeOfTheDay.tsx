@@ -6,9 +6,10 @@ import type { Anime } from "@/lib/anime-data";
 interface AnimeOfTheDayProps {
   anime: Anime | undefined;
   isLoading?: boolean;
+  isError?: boolean;
 }
 
-export function AnimeOfTheDay({ anime, isLoading }: AnimeOfTheDayProps) {
+export function AnimeOfTheDay({ anime, isLoading, isError }: AnimeOfTheDayProps) {
   if (isLoading) {
     return (
       <section className="px-5 pt-7 animate-fade-up">
@@ -22,7 +23,18 @@ export function AnimeOfTheDay({ anime, isLoading }: AnimeOfTheDayProps) {
     );
   }
 
-  if (!anime) return null;
+  if (!anime) {
+    return (
+      <section className="px-5 pt-7 animate-fade-up">
+        <p className="heading-eyebrow flex items-center gap-1 text-neon-pink">
+          <Sparkles className="h-3 w-3" /> Anime of the Day
+        </p>
+        <p className="mt-2 rounded-xl border border-border/50 bg-background/30 px-4 py-5 text-sm text-muted-foreground">
+          {isError ? "Today's pick is temporarily unavailable." : "Today's pick will appear here soon."}
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="px-5 pt-7 animate-fade-up">

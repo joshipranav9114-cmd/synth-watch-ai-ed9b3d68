@@ -148,7 +148,7 @@ export function useFeaturedAnime() {
     })),
   });
   const data = queries.map((q) => q.data).filter(Boolean) as Anime[];
-  const isLoading = queries.some((q) => q.isLoading);
+  const isLoading = queries.some((q) => q.isLoading) && data.length === 0;
   const isError = queries.length > 0 && queries.every((q) => q.isError);
   const isLoading = queries.some((q) => q.isLoading) && data.length === 0;
   return { data, isLoading, isError };
