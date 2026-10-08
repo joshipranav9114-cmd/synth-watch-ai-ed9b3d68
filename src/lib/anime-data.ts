@@ -78,9 +78,15 @@ export function normalize(a: JikanAnime): Anime {
 }
 
 async function jfetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${JIKAN}${path}`);
-  if (!res.ok) throw new Error(`Jikan ${res.status}`);
-  return (await res.json()) as T;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
+  try {
+    const res = await fetch(`${JIKAN}${path}`, { signal: controller.signal });
+    if (!res.ok) throw new Error(`Jikan ${res.status}`);
+    return (await res.json()) as T;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 // MAL IDs for the featured anime requested by the user
@@ -101,6 +107,7 @@ export function useTopAnime() {
       const r = await jfetch<{ data: JikanAnime[] }>("/top/anime?limit=12");
       return r.data.map(normalize);
     },
+    retry: false,
     staleTime: 1000 * 60 * 30,
   });
 }
@@ -112,6 +119,7 @@ export function useSeasonalAnime() {
       const r = await jfetch<{ data: JikanAnime[] }>("/seasons/now?limit=12");
       return r.data.map(normalize);
     },
+    retry: false,
     staleTime: 1000 * 60 * 60,
   });
 }
@@ -135,12 +143,15 @@ export function useFeaturedAnime() {
         const r = await jfetch<{ data: JikanAnime }>(`/anime/${id}`);
         return normalize(r.data);
       },
+      retry: false,
       staleTime: 1000 * 60 * 60 * 6,
     })),
   });
   const data = queries.map((q) => q.data).filter(Boolean) as Anime[];
-  const isLoading = queries.some((q) => q.isLoading);
-  return { data, isLoading };
+  const isLoading = queries.some((q) => q.isLoading) && data.length === 0;
+  const isError = queries.length > 0 && queries.every((q) => q.isError);
+  const isLoading = queries.some((q) => q.isLoading) && data.length === 0;
+  return { data, isLoading, isError };
 }
 
 export function useAnimeById(id: string | number) {
@@ -241,6 +252,7 @@ export function useAnimeOfTheDay() {
       );
       return normalize(r.data[dayIndex]);
     },
+    retry: false,
     staleTime: 1000 * 60 * 60 * 12, // refresh every 12 hours
   });
 }

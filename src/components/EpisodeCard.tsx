@@ -3,13 +3,22 @@ import { Play, Clock } from "lucide-react";
 import type { Anime } from "@/lib/anime-data";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function EpisodeRow({ items }: { items: Anime[] | undefined }) {
-  if (!items || items.length === 0) {
+export function EpisodeRow({ items, isLoading, isError }: { items: Anime[] | undefined; isLoading?: boolean; isError?: boolean }) {
+  if (isLoading) {
     return (
       <div className="flex gap-4 overflow-x-auto px-5 pb-3 scrollbar-hide">
         {Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} className="h-44 w-64 flex-shrink-0 rounded-2xl" />
         ))}
+      </div>
+    );
+  }
+  if (!items || items.length === 0) {
+    return (
+      <div className="px-5 pb-3">
+        <p className="rounded-xl border border-border/50 bg-background/30 px-4 py-5 text-sm text-muted-foreground">
+          {isError ? "Latest episodes are temporarily unavailable." : "No latest episodes are available right now."}
+        </p>
       </div>
     );
   }
