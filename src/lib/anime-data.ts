@@ -101,6 +101,7 @@ export function useTopAnime() {
       const r = await jfetch<{ data: JikanAnime[] }>("/top/anime?limit=12");
       return r.data.map(normalize);
     },
+    retry: false,
     staleTime: 1000 * 60 * 30,
   });
 }
@@ -112,6 +113,7 @@ export function useSeasonalAnime() {
       const r = await jfetch<{ data: JikanAnime[] }>("/seasons/now?limit=12");
       return r.data.map(normalize);
     },
+    retry: false,
     staleTime: 1000 * 60 * 60,
   });
 }
@@ -135,6 +137,7 @@ export function useFeaturedAnime() {
         const r = await jfetch<{ data: JikanAnime }>(`/anime/${id}`);
         return normalize(r.data);
       },
+      retry: false,
       staleTime: 1000 * 60 * 60 * 6,
     })),
   });
@@ -242,6 +245,7 @@ export function useAnimeOfTheDay() {
       );
       return normalize(r.data[dayIndex]);
     },
+    retry: false,
     staleTime: 1000 * 60 * 60 * 12, // refresh every 12 hours
   });
 }
