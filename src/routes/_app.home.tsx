@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_app/home")({
 function Home() {
   const { user } = useAuth();
   const name = user?.email?.split("@")[0] ?? "Pilot";
-  const { data: featured } = useFeaturedAnime();
+  const { data: featured, isLoading: featuredLoading, isError: featuredError } = useFeaturedAnime();
   const { data: trending, isLoading: trendingLoading, isError: trendingError } = useTopAnime();
   const { data: seasonal, isLoading: seasonalLoading, isError: seasonalError } = useSeasonalAnime();
   const { data: animeOfTheDay, isLoading: aotdLoading } = useAnimeOfTheDay();
@@ -85,7 +85,7 @@ function Home() {
       </Section>
 
       <Section title="For You" subtitle="AI Curated" icon={<Sparkles className="h-3 w-3" />} accent="text-neon-purple" viewAllLink="/for-you">
-        <CardRow items={featured} size="lg" isLoading={!featured?.length && !trendingError && !seasonalError} />
+        <CardRow items={featured} size="lg" isLoading={featuredLoading} isError={featuredError} />
       </Section>
 
       {/* Anime of the Day — between For You and Top 10 */}
