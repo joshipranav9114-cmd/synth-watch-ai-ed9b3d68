@@ -13,14 +13,26 @@ import logo from "@/assets/aniverse-logo.png";
 import { useQuery } from "@tanstack/react-query";
 import { getContinueWatching } from "@/lib/watch-progress";
 
-export const Route = createFileRoute("/_app/home")({ component: Home });
+export const Route = createFileRoute("/_app/home")({
+  head: () => ({
+    meta: [
+      { title: "Home — AniVerse Anime Discovery" },
+      { name: "description", content: "Explore personalized anime picks, trending series, seasonal releases, and your watch progress on AniVerse." },
+      { property: "og:title", content: "Home — AniVerse Anime Discovery" },
+      { property: "og:description", content: "Explore personalized anime picks, trending series, seasonal releases, and your watch progress on AniVerse." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: Home,
+});
 
 function Home() {
   const { user } = useAuth();
   const name = user?.email?.split("@")[0] ?? "Pilot";
   const { data: featured } = useFeaturedAnime();
-  const { data: trending } = useTopAnime();
-  const { data: seasonal } = useSeasonalAnime();
+  const { data: trending, isLoading: trendingLoading, isError: trendingError } = useTopAnime();
+  const { data: seasonal, isLoading: seasonalLoading, isError: seasonalError } = useSeasonalAnime();
   const { data: animeOfTheDay, isLoading: aotdLoading } = useAnimeOfTheDay();
   const { data: continueWatching, isLoading: cwLoading } = useQuery({
     queryKey: ["watch-progress", user?.id],
@@ -69,22 +81,22 @@ function Home() {
       </Section>
 
       <Section title="Latest Episodes" subtitle="Fresh Drops" icon={<Flame className="h-3 w-3" />} accent="text-neon-pink" wrap={false} viewAllLink="/latest-episodes">
-        <EpisodeRow items={seasonal} />
+      <EpisodeRow items={seasonal} isLoading={seasonalLoading} isError={seasonalError} />
       </Section>
 
       <Section title="For You" subtitle="AI Curated" icon={<Sparkles className="h-3 w-3" />} accent="text-neon-purple" viewAllLink="/for-you">
-        <CardRow items={featured} size="lg" />
+        <CardRow items={featured} size="lg" isLoading={!featured?.length && !trendingError && !seasonalError} />
       </Section>
 
       {/* Anime of the Day — between For You and Top 10 */}
       <AnimeOfTheDay anime={animeOfTheDay} isLoading={aotdLoading} />
 
       <Section title="Top 10 This Week" subtitle="Trending Now" icon={<TrendingUp className="h-3 w-3" />} accent="text-neon-orange" viewAllLink="/trending">
-        <CardRow items={trending?.slice(0, 10)} size="xl" ranked />
+        <CardRow items={trending?.slice(0, 10)} size="xl" ranked isLoading={trendingLoading} isError={trendingError} />
       </Section>
 
       <Section title="Simulcast Season" subtitle="This Season" icon={<Flame className="h-3 w-3" />} accent="text-neon-cyan" viewAllLink="/simulcast">
-        <CardRow items={seasonal} size="xl" />
+        <CardRow items={seasonal} size="xl" isLoading={seasonalLoading} isError={seasonalError} />
       </Section>
 
       <section className="px-5 pt-8 section-fade">
@@ -164,12 +176,16 @@ function CardRow({
   items,
   size = "md",
   ranked = false,
+  isLoading = false,
+  isError = false,
 }: {
   items: Anime[] | undefined;
   size?: "sm" | "md" | "lg" | "xl";
   ranked?: boolean;
+  isLoading?: boolean;
+  isError?: boolean;
 }) {
-  if (!items || items.length === 0) {
+  if (isLoading) {
     const w =
       size === "xl" ? "w-52 h-72" : size === "lg" ? "w-44 h-64" : "w-36 h-52";
     return (
@@ -178,6 +194,13 @@ function CardRow({
           <Skeleton key={i} className={`flex-shrink-0 rounded-2xl ${w}`} />
         ))}
       </>
+    );
+  }
+  if (!items || items.length === 0) {
+    return (
+      <p className="mx-5 w-full rounded-xl border border-border/50 bg-background/30 px-4 py-5 text-sm text-muted-foreground">
+        {isError ? "Anime data is temporarily unavailable." : "No anime is available right now."}
+      </p>
     );
   }
   return (

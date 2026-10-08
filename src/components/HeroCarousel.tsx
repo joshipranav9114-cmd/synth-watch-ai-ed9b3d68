@@ -5,14 +5,31 @@ import { Play, Plus, Sparkles, Star, Info } from "lucide-react";
 
 export function HeroCarousel() {
   const [i, setI] = useState(0);
-  const { data: ANIME, isLoading } = useFeaturedAnime();
+  const { data: ANIME, isLoading, isError } = useFeaturedAnime();
   useEffect(() => {
     if (!ANIME.length) return;
     const t = setInterval(() => setI((p) => (p + 1) % ANIME.length), 5000);
     return () => clearInterval(t);
   }, [ANIME.length]);
-  if (isLoading || !ANIME.length) {
-    return <div className="h-[640px] w-full animate-pulse bg-muted/20" />;
+  if (isLoading) {
+    return <div aria-label="Loading featured anime" className="h-[420px] w-full animate-pulse bg-muted/20" />;
+  }
+  if (!ANIME.length) {
+    return (
+      <section className="relative flex min-h-[300px] items-end overflow-hidden bg-background px-5 pb-10 pt-24">
+        <div className="absolute inset-0 bg-gradient-to-r from-neon-purple/20 via-background/60 to-neon-orange/10" />
+        <div className="relative max-w-xl">
+          <p className="heading-eyebrow text-neon-orange">AniVerse Spotlight</p>
+          <h1 className="heading-1 mt-2 text-foreground">Discover your next anime.</h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {isError ? "Featured anime is temporarily unavailable." : "No featured anime is available right now."}
+          </p>
+          <Link to="/search" className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-gradient-cr px-6 text-sm font-bold uppercase text-background shadow-orange">
+            <Sparkles className="h-4 w-4" /> Explore anime
+          </Link>
+        </div>
+      </section>
+    );
   }
   const a = ANIME[i];
   return (
