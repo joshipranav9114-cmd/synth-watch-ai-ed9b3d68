@@ -1,48 +1,18 @@
-# Fix: Discussion/Reviews tab shows nothing despite stored rows
+# Restore the AniVerse home page
 
-## Root cause (not what was suspected)
+## Goal
+Make `/home` render its full set of anime sections reliably, even when Jikan data cannot be reached.
 
-The `anime_id` values are stored correctly. Existing rows on `anime_comments` for the current page (`/anime/51553`) hold `anime_id = '51553'` (text), which matches the route param exactly — no string/number mismatch.
+## Findings
+- `AnimeOfTheDay` and `useAnimeOfTheDay` both exist and are exported; the import paths used by the home page match.
+- The latest recorded preview build is successful, with no recorded runtime exception.
+- Preview telemetry shows failed network requests to Jikan, including the featured, seasonal, and top-anime requests. The hero currently keeps a large loading placeholder when featured data is unavailable.
 
-The real failure is in the embedded profile join used by `getComments` / `getReviews` in `src/lib/community.ts`:
+## Work
+1. Keep the existing home-page sections and check the remaining render dependencies for errors that could stop the page.
+2. Make anime-dependent sections fail gracefully when Jikan requests fail, so the hero and content rails show useful empty or fallback states rather than indefinite blank loading space. Retain Anime of the Day unless an actual render crash is found; React error handling will not be added as an ineffective try/catch.
+3. Add unique `/home` page metadata and verify the preview renders the hero, Continue Watching, Latest Episodes, For You, Top 10, and Simulcast sections without a page exception.
 
-```ts
-.select("…, profiles:user_id (id, display_name, avatar_emoji, avatar_color)")
-```
-
-Console shows PostgREST error `PGRST200: Could not find a relationship between 'anime_comments'/'anime_reviews' and 'user_id' in the schema cache`. The query returns `[]`, so the UI renders "No comments yet" / "No reviews".
-
-Reason: `anime_comments.user_id` and `anime_reviews.user_id` only have FKs to `auth.users(id)`. PostgREST can't auto-resolve an embed to `public.profiles` because no FK to `profiles` exists. The profile-page counts work because they don't embed — they just call `count: exact`.
-
-## Fix
-
-Add a second FK on each affected table pointing `user_id → public.profiles(id)`. Profiles are created 1:1 with auth users by the existing `handle_new_user` trigger, so this is safe.
-
-**Migration** (new file `supabase/migrations/<ts>_community_profile_fks.sql`):
-
-```sql
-ALTER TABLE public.anime_comments
-  ADD CONSTRAINT anime_comments_user_id_profiles_fkey
-  FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
-
-ALTER TABLE public.anime_reviews
-  ADD CONSTRAINT anime_reviews_user_id_profiles_fkey
-  FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
-
-ALTER TABLE public.discussion_messages
-  ADD CONSTRAINT discussion_messages_user_id_profiles_fkey
-  FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
-```
-
-After the migration, the existing `profiles:user_id (...)` embeds resolve and the queries return rows. No client code changes needed; UI untouched.
-
-## Verification
-
-- Reload `/anime/51553` → existing comment and review render.
-- Post a new comment/review → appears immediately.
-- Profile page stat counts stay the same.
-
-## Files
-
-- New: `supabase/migrations/<timestamp>_community_profile_fks.sql`
-- No other files changed.
+## Technical details
+- Limit changes to the home route and the shared anime-data/rendering code needed for resilient Jikan failure handling.
+- Preserve the current AniVerse visual style and section order.
